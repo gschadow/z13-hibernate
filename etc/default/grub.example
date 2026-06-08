@@ -6,7 +6,7 @@ GRUB_TIMEOUT_STYLE=menu
 GRUB_DISTRIBUTOR="CachyOS"
 
 GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet"
-GRUB_CMDLINE_LINUX="rd.luks.name=ROOT_LUKS_UUID=root rd.luks.name=HIB_LUKS_UUID=hibernate root=/dev/mapper/root resume=/dev/mapper/hibernate zswap.enabled=0 loglevel=7 noquiet nvme_core.default_ps_max_latency_us=0 amdgpu.runpm=0 amdgpu.gpu_recovery=1 amdgpu.lockup_timeout=10000,10000,10000,10000 amdgpu.noretry=0 amdgpu.dc=1 amdgpu.aspm=0 amdgpu.sg_display=0 transparent_hugepage=always nvme_core.io_timeout=300 pci=pcie_bus_perf"
+GRUB_CMDLINE_LINUX="rd.luks.name=ROOT_LUKS_UUID=root rd.luks.name=HIB_LUKS_UUID=hibernate root=/dev/mapper/root resume=/dev/mapper/hibernate zswap.enabled=0 nvme_core.default_ps_max_latency_us=0 amdgpu.runpm=0 amdgpu.gpu_recovery=1 amdgpu.lockup_timeout=10000,10000,10000,10000 amdgpu.noretry=0 amdgpu.dc=1 amdgpu.aspm=0 amdgpu.sg_display=0 transparent_hugepage=always nvme_core.io_timeout=300 pci=pcie_bus_perf"
 
 # This is a TEMPLATE. Replace ROOT_LUKS_UUID and HIB_LUKS_UUID with your actual values.
 # Find them with:

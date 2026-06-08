@@ -1,0 +1,13 @@
+#!/bin/sh
+
+build() {
+    add_runscript
+}
+
+help() {
+    cat <<HELPEOF
+hib-resume-prep: Early initrd hook that prepares the system for a better hibernate resume.
+It forces amdgpu performance settings, enables recovery, unblanks displays, and sets backlight.
+Must be placed before 'sd-encrypt' in the HOOKS array of /etc/mkinitcpio.conf.
+HELPEOF
+}

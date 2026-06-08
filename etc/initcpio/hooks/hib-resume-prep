@@ -1,0 +1,52 @@
+#!/bin/sh
+# hib-resume-prep — early initramfs hook for hibernate resume prep.
+# Runs before sd-encrypt, before the LUKS passphrase prompt.
+#
+# What this does (and why):
+#   - modprobe asus/amdgpu modules early (belt-and-suspenders; autodetect should
+#     already include them, but explicit load ensures they're ready for the prompt).
+#   - Check for a debug flag on the ESP and enable set -x tracing if found.
+#     (touch /boot/hib-resume-prep-debug on the EFI partition to enable)
+#
+# What this does NOT do (and why):
+#   - Keyboard backlight: asus_nb_wmi needs full ACPI/WMI stack not available this
+#     early; sysfs nodes are not populated yet. Never worked, removed.
+#   - Display unblank / amdgpu performance settings: amdgpu is not fully initialized
+#     at this point and the sysfs paths don't exist. More importantly, on a hibernate
+#     resume the full driver state is restored from the image — anything set here is
+#     overwritten. The real performance fix (EPP + lz4 + threads) lives in the
+#     systemd-sleep hook 05-hibernate-hook.sh, which runs before the image write.
+
+run_hook() {
+    mkdir -p /run 2>/dev/null || true
+    LOG=/run/hib-resume-prep.log
+    echo "hib-resume-prep: started at $(date +%T)" > "$LOG" 2>/dev/null || true
+    echo '<6>hib-resume-prep: started' > /dev/kmsg 2>/dev/null || true
+
+    modprobe -q asus_nb_wmi 2>/dev/null || true
+    modprobe -q asus_wmi    2>/dev/null || true
+    modprobe -q amdgpu      2>/dev/null || true
+    echo '<6>hib-resume-prep: modprobes done' > /dev/kmsg 2>/dev/null || true
+
+    # Optional set -x trace: touch /boot/hib-resume-prep-debug on the EFI partition.
+    # The trace goes to /run/hib-resume-prep.log which 05-hibernate-hook.sh flushes
+    # into /var/log/hibernate.log after the next boot.
+    mkdir -p /tmp 2>/dev/null || true
+    for dev in /dev/disk/by-uuid/147C-2EA1 /dev/nvme0n1p1 ; do
+        [ -b "$dev" ] || continue
+        mkdir -p /tmp/esp-prep 2>/dev/null || true
+        if mount -t vfat -o ro "$dev" /tmp/esp-prep 2>/dev/null; then
+            if [ -f /tmp/esp-prep/hib-resume-prep-debug ]; then
+                echo '<6>hib-resume-prep: DEBUG flag found — enabling trace' > /dev/kmsg 2>/dev/null || true
+                exec 2>>"$LOG"
+                set -x
+            fi
+            umount /tmp/esp-prep 2>/dev/null || true
+            rmdir  /tmp/esp-prep 2>/dev/null || true
+            break
+        fi
+    done
+
+    echo "hib-resume-prep: done" >> "$LOG" 2>/dev/null || true
+    echo '<6>hib-resume-prep: done' > /dev/kmsg 2>/dev/null || true
+}

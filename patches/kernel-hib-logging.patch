@@ -1,0 +1,110 @@
+# Patch to add z13-hib debug logging to hibernation paths
+# Apply in the kernel source tree after prepare (in src/linux-... dir)
+# This will help see exactly where and why the kernel aborts the hibernation
+# on battery (throttled I/O to LUKS hib device, etc.)
+
+diff --git a/kernel/power/hibernate.c b/kernel/power/hibernate.c
+index 8e0e0e0..f0f0f0f 100644
+--- a/kernel/power/hibernate.c
++++ b/kernel/power/hibernate.c
+@@ -300,6 +300,8 @@ int hibernate(void)
+ 	int error;
+ 	bool snapshot_test = false;
+ 
++	pr_info("z13-hib: hibernate() entry, mode=%d\n", hibernation_mode);
++
+ 	/*
+ 	 * Query for the hibernation platform support, if not already.
+ 	 */
+@@ -340,6 +342,7 @@ int hibernate(void)
+ 	error = hibernation_snapshot(hibernation_mode);
+ 	if (error) {
+ 		if (error == -EPERM || error == -EAGAIN) {
++			pr_info("z13-hib: snapshot returned %d (EPERM/EAGAIN), will exit\n", error);
+ 			/*
+ 			 * Hibernation aborted by a concurrent suspend or
+ 			 * a user space abort.
+@@ -347,6 +350,7 @@ int hibernate(void)
+ 			}
+ 			goto hibernation_exit;
+ 		}
++		pr_err("z13-hib: hibernation_snapshot failed with %d\n", error);
+ 		goto hibernation_exit;
+ 	}
+ 
+@@ -370,6 +374,7 @@ int hibernate(void)
+ 	 */
+ 	error = swsusp_write(hibernation_mode);
+ 	if (error) {
++		pr_err("z13-hib: swsusp_write failed with %d\n", error);
+ 		goto hibernation_exit;
+ 	}
+ 
+@@ -400,6 +405,7 @@ int hibernate(void)
+ 	/* Don't bother checking whether freezer_test_done is true */
+ 	freeze_kernel_threads();
+ hibernation_exit:
++	pr_info("z13-hib: hibernation_exit (error path or success?)\n");
+ 	mutex_unlock(&system_transition_mutex);
+ 	platform_recover(hibernation_mode);
+ 	return error;
+diff --git a/kernel/power/snapshot.c b/kernel/power/snapshot.c
+index 1a1a1a1..2b2b2b2 100644
+--- a/kernel/power/snapshot.c
++++ b/kernel/power/snapshot.c
+@@ -1200,6 +1200,8 @@ int hibernation_snapshot(int platform_mode)
+ 	int error;
+ 
++	pr_info("z13-hib: hibernation_snapshot entry\n");
++
+ 	/* Free memory before shutting down devices. */
+ 	error = swsusp_shrink_memory();
+ 	if (error)
+@@ -1220,6 +1222,8 @@ int hibernation_snapshot(int platform_mode)
+ 	if (error)
+ 		goto Close;
+ 
++	pr_info("z13-hib: basic bitmaps created, about to do atomic snapshot\n");
++
+ 	error = swsusp_snapshot(platform_mode);
+ 	if (error)
+ 		goto Erase;
+@@ -1235,6 +1239,8 @@ int hibernation_snapshot(int platform_mode)
+ 	if (error)
+ 		goto Erase;
+ 
++	pr_info("z13-hib: snapshot done, image size %lu pages\n", image_size);
++
+ 	/* The snapshot is ready, so change the console mode. */
+ 	if (!error)
+ 		error = freeze_console();
+@@ -1250,6 +1256,7 @@ int hibernation_snapshot(int platform_mode)
+ 	swsusp_free();
+ 	swsusp_close(platform_mode);
+ 
++	pr_info("z13-hib: hibernation_snapshot exit with %d\n", error);
+ 	return error;
+ }
+ 
+diff --git a/kernel/power/swap.c b/kernel/power/swap.c
+index 3c3c3c3..4d4d4d4 100644
+--- a/kernel/power/swap.c
++++ b/kernel/power/swap.c
+@@ -850,6 +850,8 @@ int swsusp_write(unsigned int flags)
+ 	int error;
+ 
++	pr_info("z13-hib: swsusp_write entry\n");
++
+ 	hibernation_mode = flags;
+ 
+ 	error = swsusp_write_page((unsigned long)swsusp_header,
+@@ -880,6 +882,8 @@ int swsusp_write(unsigned int flags)
+ 	if (error)
+ 		goto out;
+ 
++	pr_info("z13-hib: image write done, pages written: %lu\n", ... );
++
+ out:
++	pr_info("z13-hib: swsusp_write exit %d\n", error);
+ 	return error;
+ }

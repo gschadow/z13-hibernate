@@ -1,0 +1,29 @@
+# /etc/default/grub
+
+GRUB_DEFAULT="CachyOS BORE (default - recommended for IO/hiber and daily)"
+GRUB_TIMEOUT=5
+GRUB_TIMEOUT_STYLE=menu
+GRUB_DISTRIBUTOR="CachyOS"
+
+GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet"
+GRUB_CMDLINE_LINUX="rd.luks.name=ROOT_LUKS_UUID=root rd.luks.name=HIB_LUKS_UUID=hibernate root=/dev/mapper/root resume=/dev/mapper/hibernate zswap.enabled=0 loglevel=7 noquiet nvme_core.default_ps_max_latency_us=0 amdgpu.runpm=0 amdgpu.gpu_recovery=1 amdgpu.lockup_timeout=10000,10000,10000,10000 amdgpu.noretry=0 amdgpu.dc=1 amdgpu.aspm=0 amdgpu.sg_display=0 transparent_hugepage=always nvme_core.io_timeout=300 pci=pcie_bus_perf"
+
+# This is a TEMPLATE. Replace ROOT_LUKS_UUID and HIB_LUKS_UUID with your actual values.
+# Find them with:
+#   blkid /dev/nvme0n1pX          # or whatever your partitions are
+#   cryptsetup luksUUID /dev/nvme0n1pX
+#
+# The LUKS setup script (luks/setup-hibernate-luks2.sh) will automatically update
+# the HIB_LUKS_UUID part in your real /etc/default/grub.
+
+GRUB_PRELOAD_MODULES="part_gpt part_msdos"
+GRUB_TIMEOUT_STYLE=menu
+GRUB_TERMINAL_INPUT=console
+GRUB_GFXMODE=auto
+GRUB_GFXPAYLOAD_LINUX=keep
+
+# Uncomment to enable theme
+#GRUB_THEME="/path/to/gfxtheme"
+
+# Uncomment to disable OS prober (recommended for encrypted systems)
+#GRUB_DISABLE_OS_PROBER=true

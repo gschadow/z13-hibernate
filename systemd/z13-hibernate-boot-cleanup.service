@@ -1,0 +1,14 @@
+[Unit]
+Description=Clean z13-hibernate marker and PID files on normal boot (not hibernate resume)
+DefaultDependencies=no
+After=local-fs.target
+Before=systemd-hibernate-resume.service
+ConditionPathExists=!/run/systemd/systemd-hibernate-resume
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/sh -c 'rm -f /run/z13-was-hibernated /var/run/hibernate-stopped-pids /var/run/hibernate-watcher.pid'
+
+[Install]
+WantedBy=multi-user.target

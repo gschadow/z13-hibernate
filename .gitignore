@@ -1,0 +1,11 @@
+# Editor swap files
+*.swp
+*.swo
+*~
+
+# Backup files left by editors or manual cp
+*.orig
+*.bak
+
+# Machine-specific scripts that live in the parent directory
+# (install-test-kernel.sh, deploy-hooks.sh, script.sh etc. belong in ~, not here)

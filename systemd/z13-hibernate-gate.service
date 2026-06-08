@@ -1,0 +1,14 @@
+[Unit]
+Description=z13 hibernate gate pre-check (quiesce and LED state before systemd-hibernate)
+Before=systemd-hibernate.service
+DefaultDependencies=no
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/z13-hibernate/gate-hook.sh
+RemainAfterExit=yes
+TimeoutStartSec=180
+
+[Install]
+WantedBy=hibernate.target
+RequiredBy=hibernate.target

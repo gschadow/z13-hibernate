@@ -1,0 +1,13 @@
+# /etc/mkinitcpio.conf
+# See mkinitcpio(8) for details
+
+MODULES=(ext4)
+
+BINARIES=()
+
+FILES=()
+
+HOOKS=(base udev systemd autodetect microcode modconf kms keyboard sd-vconsole block hib-resume-prep sd-encrypt resume filesystems fsck)
+
+COMPRESSION="zstd"
+#COMPRESSION_OPTIONS=()

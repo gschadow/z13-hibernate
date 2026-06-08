@@ -1,0 +1,81 @@
+# Makefile for z13-hibernate
+#
+# make install   — copy files into place (as root); does NOT enable/start services
+# make deploy    — install + enable services (as root, live system)
+# make uninstall — remove installed files
+#
+# /etc/default/grub and /etc/mkinitcpio.conf are NOT touched by any target.
+# See etc/default/grub.example and etc/mkinitcpio.conf.example for the parameters
+# you need to merge into your system files by hand.
+
+PREFIX  ?= /usr
+DESTDIR ?=
+
+.PHONY: install deploy uninstall
+
+install:
+	# Runtime library + helpers
+	install -d $(DESTDIR)$(PREFIX)/lib/z13-hibernate
+	install -m 644 src/common.sh           $(DESTDIR)$(PREFIX)/lib/z13-hibernate/common.sh
+	install -m 755 src/gate-hook.sh        $(DESTDIR)$(PREFIX)/lib/z13-hibernate/gate-hook.sh
+	install -m 755 src/post-resume-hook.sh $(DESTDIR)$(PREFIX)/lib/z13-hibernate/post-resume-hook.sh
+
+	# systemd-sleep hooks (ordering via numeric prefix)
+	install -d $(DESTDIR)$(PREFIX)/lib/systemd/system-sleep
+	install -m 755 src/hibernate-hook.sh $(DESTDIR)$(PREFIX)/lib/systemd/system-sleep/05-hibernate-hook.sh
+	install -m 755 src/resume-hook.sh    $(DESTDIR)$(PREFIX)/lib/systemd/system-sleep/95-resume-hook.sh
+
+	# systemd units
+	install -d $(DESTDIR)$(PREFIX)/lib/systemd/system
+	install -m 644 systemd/z13-hibernate-gate.service \
+	               $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-hibernate-gate.service
+	install -d $(DESTDIR)$(PREFIX)/lib/systemd/system/systemd-hibernate.service.d
+	install -m 644 systemd/systemd-hibernate.service.d/10-gate.conf \
+	               $(DESTDIR)$(PREFIX)/lib/systemd/system/systemd-hibernate.service.d/10-gate.conf
+	install -m 644 systemd/z13-hibernate-boot-cleanup.service \
+	               $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-hibernate-boot-cleanup.service
+
+	# initcpio hook (two search paths: /etc and /usr/lib)
+	install -d $(DESTDIR)/etc/initcpio/hooks $(DESTDIR)/etc/initcpio/install
+	install -m 755 etc/initcpio/hooks/hib-resume-prep \
+	               $(DESTDIR)/etc/initcpio/hooks/hib-resume-prep
+	install -m 755 etc/initcpio/install/hib-resume-prep.install \
+	               $(DESTDIR)/etc/initcpio/install/hib-resume-prep
+	install -d $(DESTDIR)$(PREFIX)/lib/initcpio/hooks $(DESTDIR)$(PREFIX)/lib/initcpio/install
+	install -m 755 etc/initcpio/hooks/hib-resume-prep \
+	               $(DESTDIR)$(PREFIX)/lib/initcpio/hooks/hib-resume-prep
+	install -m 755 etc/initcpio/install/hib-resume-prep.install \
+	               $(DESTDIR)$(PREFIX)/lib/initcpio/install/hib-resume-prep
+
+	@echo ""
+	@echo "Files installed. Next steps:"
+	@echo "  1. Merge etc/default/grub.example params into your /etc/default/grub"
+	@echo "  2. Add 'hib-resume-prep' before 'sd-encrypt' in /etc/mkinitcpio.conf HOOKS"
+	@echo "  3. Run: make deploy   (enables services)"
+	@echo "  4. Run: mkinitcpio -P && grub-mkconfig -o /boot/grub/grub.cfg"
+
+deploy: install
+	systemctl daemon-reload
+	systemctl enable z13-hibernate-gate.service
+	systemctl enable z13-hibernate-boot-cleanup.service
+	@echo ""
+	@echo "Services enabled."
+	@echo "Still needed (once, after first install):"
+	@echo "  mkinitcpio -P"
+	@echo "  grub-mkconfig -o /boot/grub/grub.cfg"
+
+uninstall:
+	rm -f $(DESTDIR)$(PREFIX)/lib/z13-hibernate/common.sh
+	rm -f $(DESTDIR)$(PREFIX)/lib/z13-hibernate/gate-hook.sh
+	rm -f $(DESTDIR)$(PREFIX)/lib/z13-hibernate/post-resume-hook.sh
+	-rmdir $(DESTDIR)$(PREFIX)/lib/z13-hibernate 2>/dev/null || true
+	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system-sleep/05-hibernate-hook.sh
+	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system-sleep/95-resume-hook.sh
+	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-hibernate-gate.service
+	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system/systemd-hibernate.service.d/10-gate.conf
+	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-hibernate-boot-cleanup.service
+	rm -f $(DESTDIR)/etc/initcpio/hooks/hib-resume-prep
+	rm -f $(DESTDIR)/etc/initcpio/install/hib-resume-prep
+	rm -f $(DESTDIR)$(PREFIX)/lib/initcpio/hooks/hib-resume-prep
+	rm -f $(DESTDIR)$(PREFIX)/lib/initcpio/install/hib-resume-prep
+	@echo "Uninstalled. Your /etc/default/grub and /etc/mkinitcpio.conf were not touched."

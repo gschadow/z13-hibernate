@@ -10,5 +10,4 @@ RemainAfterExit=yes
 TimeoutStartSec=180
 
 [Install]
-WantedBy=hibernate.target
 RequiredBy=hibernate.target

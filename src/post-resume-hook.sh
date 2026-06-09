@@ -22,6 +22,7 @@ fi
 # For now, do a full screen restore (so resume still works well) and final done color.
 restore_screen
 restore_lights_and_profile
+restart_gpu_processes
 
 # Final "we are done" color
 asusctl leds set high 2>/dev/null || true

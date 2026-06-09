@@ -27,8 +27,64 @@ kmsg "hook: kernel=$(uname -r) (gate did pre-check; this hook does perf + breath
 # Performance settings (the critical boost + tunings right before write)
 # No profile apply here that looks at battery; we always want max for the snapshot.
 
-swapoff /dev/dm-1 2>/dev/null || kmsg "hook: volatile swapoff (ok if absent)"
+swapoff /dev/mapper/swap 2>/dev/null || kmsg "hook: volatile swapoff (ok if absent)"
 echo 0 > /sys/module/zswap/parameters/enabled 2>/dev/null || true
+
+# mt7925e WiFi: on S4 resume the firmware times out (error -110 in ieee80211_reconfig).
+# The driver is left in a broken state. If hibernate starts while the driver is in that
+# state, the PM suspend callback hangs waiting for firmware that never answers → fans
+# spin, system never powers off. Unloading the driver before hibernation forces a clean
+# firmware re-init on the next resume instead of trying to suspend a broken state.
+#
+# Always bring the interface down first regardless of lsmod state: the physical device
+# is still present and will get PM callbacks even if the module name doesn't match or
+# the driver was briefly absent due to a rapid S3 cycle reloading it.
+_wifi_if=wlp194s0
+if ip link show "$_wifi_if" &>/dev/null; then
+  ip link set "$_wifi_if" down 2>/dev/null || true
+  kmsg "hook: ${_wifi_if} brought down"
+fi
+_mt_mods=$(lsmod | awk 'NR>1 && /^mt79/ {print $1}' | tr '\n' ' ')
+kmsg "hook: mt79xx lsmod: ${_mt_mods:-none}"
+if echo "$_mt_mods" | grep -qw 'mt7925e'; then
+  # timeout 20s: if firmware is broken the remove callback can hang; cap it so
+  # the machine doesn't breathe forever on AC if WiFi refuses to unload.
+  timeout 20 modprobe -r mt7925e 2>/dev/null \
+    && kmsg "hook: mt7925e unloaded" \
+    || kmsg "hook: mt7925e unload timed-out or failed (PM suspend may still hang)"
+else
+  kmsg "hook: mt7925e not in lsmod (absent or already removed)"
+fi
+
+# VirtualBox: vboxdrv PM callbacks deadlock the kernel at hibernation entry when any VM is
+# running. Save running VMs first (they resume from saved state after you start VBox post-resume),
+# then unload the modules. Without this, the machine hangs indefinitely at hibernation entry.
+if lsmod | grep -q '^vboxdrv'; then
+  _vbox_user=$(loginctl list-sessions --no-legend 2>/dev/null | awk '($4 == "active" || $3 == "seat0") { print $3; exit }')
+  [ -z "$_vbox_user" ] && _vbox_user=gunther
+  _running=$(sudo -u "$_vbox_user" VBoxManage list runningvms 2>/dev/null | awk -F'"' '{print $2}')
+  if [ -n "$_running" ]; then
+    kmsg "hook: saving running VMs before hibernate: $(echo "$_running" | tr '\n' ',')"
+    while IFS= read -r _vm; do
+      [ -z "$_vm" ] && continue
+      timeout 120 sudo -u "$_vbox_user" VBoxManage controlvm "$_vm" savestate 2>/dev/null \
+        && kmsg "hook: VM saved: $_vm" \
+        || kmsg "hook: WARNING: failed to save VM: $_vm (unloading anyway)"
+    done <<< "$_running"
+    sleep 1
+  else
+    kmsg "hook: vboxdrv loaded, no VMs running"
+  fi
+  modprobe -r vboxnetflt vboxnetadp vboxdrv 2>/dev/null \
+    && kmsg "hook: vbox modules unloaded" \
+    || kmsg "hook: vbox modules already gone"
+fi
+
+# 'shutdown' mode writes the image then does a plain poweroff rather than ACPI S4,
+# which is more reliable on AMD. 'platform' (the default) can hang on S4 transitions.
+echo shutdown > /sys/power/disk 2>/dev/null || true
+kmsg "hook: hibernate disk mode: $(cat /sys/power/disk 2>/dev/null | tr -d '\n')"
+
 kmsg "hook: drop_caches at $(date '+%H:%M:%S')"
 echo 3 > /proc/sys/vm/drop_caches
 kmsg "hook: sync starting at $(date '+%H:%M:%S') (may block several minutes on battery with dirty pages)"

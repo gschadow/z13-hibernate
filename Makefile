@@ -22,8 +22,17 @@ install:
 
 	# systemd-sleep hooks (ordering via numeric prefix)
 	install -d $(DESTDIR)$(PREFIX)/lib/systemd/system-sleep
-	install -m 755 src/hibernate-hook.sh $(DESTDIR)$(PREFIX)/lib/systemd/system-sleep/05-hibernate-hook.sh
-	install -m 755 src/resume-hook.sh    $(DESTDIR)$(PREFIX)/lib/systemd/system-sleep/95-resume-hook.sh
+	install -m 755 src/hibernate-hook.sh       $(DESTDIR)$(PREFIX)/lib/systemd/system-sleep/05-hibernate-hook.sh
+	install -m 755 src/resume-hook.sh          $(DESTDIR)$(PREFIX)/lib/systemd/system-sleep/95-resume-hook.sh
+	install -m 755 src/s2idle-resume-fixup.sh  $(DESTDIR)$(PREFIX)/lib/systemd/system-sleep/50-s2idle-resume-fixup.sh
+
+	# systemd drop-in configs (sleep policy + lid switch)
+	install -d $(DESTDIR)/etc/systemd/sleep.conf.d
+	install -m 644 etc/systemd/sleep.conf.d/z13-suspend-then-hibernate.conf \
+	               $(DESTDIR)/etc/systemd/sleep.conf.d/z13-suspend-then-hibernate.conf
+	install -d $(DESTDIR)/etc/systemd/logind.conf.d
+	install -m 644 etc/systemd/logind.conf.d/z13-lid.conf \
+	               $(DESTDIR)/etc/systemd/logind.conf.d/z13-lid.conf
 
 	# systemd units
 	install -d $(DESTDIR)$(PREFIX)/lib/systemd/system
@@ -51,18 +60,22 @@ install:
 	@echo "Files installed. Next steps:"
 	@echo "  1. Merge etc/default/grub.example params into your /etc/default/grub"
 	@echo "  2. Add 'hib-resume-prep' before 'sd-encrypt' in /etc/mkinitcpio.conf HOOKS"
-	@echo "  3. Run: make deploy   (enables services)"
+	@echo "  3. Run: make deploy   (enables services + applies sleep policy)"
 	@echo "  4. Run: mkinitcpio -P && grub-mkconfig -o /boot/grub/grub.cfg"
+	@echo "  5. In KDE: System Settings → Power Management → set lid-close to"
+	@echo "     'Suspend-then-Hibernate' (PowerDevil overrides logind for desktop sessions)"
 
 deploy: install
 	systemctl daemon-reload
 	systemctl enable z13-hibernate-gate.service
 	systemctl enable z13-hibernate-boot-cleanup.service
 	@echo ""
-	@echo "Services enabled."
+	@echo "Services enabled. Sleep policy and lid config installed."
 	@echo "Still needed (once, after first install):"
 	@echo "  mkinitcpio -P"
 	@echo "  grub-mkconfig -o /boot/grub/grub.cfg"
+	@echo "  KDE: System Settings → Power Management → lid-close → Suspend-then-Hibernate"
+	@echo "  NOTE: logind.conf changes take effect on next full reboot (do NOT restart logind live)"
 
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/lib/z13-hibernate/common.sh
@@ -71,6 +84,9 @@ uninstall:
 	-rmdir $(DESTDIR)$(PREFIX)/lib/z13-hibernate 2>/dev/null || true
 	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system-sleep/05-hibernate-hook.sh
 	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system-sleep/95-resume-hook.sh
+	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system-sleep/50-s2idle-resume-fixup.sh
+	rm -f $(DESTDIR)/etc/systemd/sleep.conf.d/z13-suspend-then-hibernate.conf
+	rm -f $(DESTDIR)/etc/systemd/logind.conf.d/z13-lid.conf
 	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-hibernate-gate.service
 	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system/systemd-hibernate.service.d/10-gate.conf
 	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-hibernate-boot-cleanup.service

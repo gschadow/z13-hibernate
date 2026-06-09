@@ -16,7 +16,7 @@ if [ -f /run/force-hibernate-abort-test ] || [ "${1:-}" = "test-abort" ]; then
   exit 1
 fi
 
-kmsg "gate: === BEGIN HIBERNATE GATE PRE-CHECK (white from common) ==="
+kmsg "gate: === BEGIN HIBERNATE GATE PRE-CHECK ==="
 kmsg "gate: kernel=$(uname -r)"
 
 # NOTE: We deliberately do NOT call apply_power_profile or force_high_performance here.
@@ -26,6 +26,31 @@ kmsg "gate: kernel=$(uname -r)"
 # Initial color for pre-check phase (blue-ish)
 asusctl leds set med 2>/dev/null || true
 asusctl aura effect static -c 0060ff 2>/dev/null || true
+
+# Suspend KWin compositor before the user.slice freeze.
+# This drains all outstanding GPU fences so the kernel's PM_HIBERNATION_PREPARE notifier
+# (amdgpu) can disable the display pipeline cleanly. Without this, after S4 resume the
+# amdgpu PM notifier can block indefinitely on a stuck atomic commit or fence from the
+# kscreenlocker GPU crash (VM memory stats non-zero when fini) that happens on every
+# S4 resume — causing an infinite hang at "PM: hibernation: hibernation entry".
+_hib_user=gunther
+_hib_uid=$(id -u "$_hib_user" 2>/dev/null || echo "")
+if [ -n "$_hib_uid" ]; then
+  _hib_xdg="/run/user/$_hib_uid"
+  _hib_wl=""
+  for _w in wayland-0 wayland-1 wayland-2; do
+    [ -S "$_hib_xdg/$_w" ] && _hib_wl="$_w" && break
+  done
+  if [ -n "$_hib_wl" ]; then
+    _hib_env="XDG_RUNTIME_DIR=$_hib_xdg DBUS_SESSION_BUS_ADDRESS=unix:path=$_hib_xdg/bus WAYLAND_DISPLAY=$_hib_wl"
+    sudo -u "$_hib_user" env $_hib_env qdbus org.kde.KWin /Compositor suspend 2>/dev/null \
+      && kmsg "gate: KWin compositor suspended (GPU will drain before PM notifier)" \
+      || kmsg "gate: KWin compositor suspend skipped/failed (non-fatal)"
+    sleep 2
+  else
+    kmsg "gate: no Wayland socket found for $_hib_user, skipping compositor suspend"
+  fi
+fi
 
 stop_and_record_busy
 

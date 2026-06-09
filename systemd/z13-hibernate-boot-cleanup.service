@@ -2,13 +2,20 @@
 Description=Clean z13-hibernate marker and PID files on normal boot (not hibernate resume)
 DefaultDependencies=no
 After=local-fs.target
-Before=systemd-hibernate-resume.service
-ConditionPathExists=!/run/systemd/systemd-hibernate-resume
+# Use our own marker as the gate: on S4 resume, the hibernated RAM is restored
+# and the marker lives in /run. On a fresh boot /run is empty and the marker
+# is absent. ConditionPathExists=!/run/z13-was-hibernated is therefore TRUE only
+# on fresh boots, which is exactly when we need to clean stale pid-files.
+# The old condition (!/run/systemd/systemd-hibernate-resume) was unreliable: that
+# path lives in the initrd /run and is gone after initrd-switch-root, so the
+# service ran on S4 resumes too and deleted the marker before the resume hooks
+# could check it.
+ConditionPathExists=!/run/z13-was-hibernated
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/bin/sh -c 'rm -f /run/z13-was-hibernated /var/run/hibernate-stopped-pids /var/run/hibernate-watcher.pid'
+ExecStart=/bin/sh -c 'rm -f /var/run/hibernate-stopped-pids /var/run/hibernate-watcher.pid'
 
 [Install]
 WantedBy=multi-user.target

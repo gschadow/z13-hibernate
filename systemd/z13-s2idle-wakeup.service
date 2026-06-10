@@ -1,0 +1,13 @@
+[Unit]
+Description=Configure s2idle ACPI/USB wakeup sources for ROG Z13 GZ302EA
+Documentation=https://github.com/gunther/z13-hibernate
+After=local-fs.target
+Before=sleep.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/lib/z13-hibernate/s2idle-wakeup-config.sh
+
+[Install]
+WantedBy=multi-user.target

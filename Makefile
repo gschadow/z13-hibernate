@@ -16,9 +16,10 @@ DESTDIR ?=
 install:
 	# Runtime library + helpers
 	install -d $(DESTDIR)$(PREFIX)/lib/z13-hibernate
-	install -m 644 src/common.sh           $(DESTDIR)$(PREFIX)/lib/z13-hibernate/common.sh
-	install -m 755 src/gate-hook.sh        $(DESTDIR)$(PREFIX)/lib/z13-hibernate/gate-hook.sh
-	install -m 755 src/post-resume-hook.sh $(DESTDIR)$(PREFIX)/lib/z13-hibernate/post-resume-hook.sh
+	install -m 644 src/common.sh                $(DESTDIR)$(PREFIX)/lib/z13-hibernate/common.sh
+	install -m 755 src/gate-hook.sh             $(DESTDIR)$(PREFIX)/lib/z13-hibernate/gate-hook.sh
+	install -m 755 src/post-resume-hook.sh      $(DESTDIR)$(PREFIX)/lib/z13-hibernate/post-resume-hook.sh
+	install -m 755 src/s2idle-wakeup-config.sh  $(DESTDIR)$(PREFIX)/lib/z13-hibernate/s2idle-wakeup-config.sh
 
 	# systemd-sleep hooks (ordering via numeric prefix)
 	install -d $(DESTDIR)$(PREFIX)/lib/systemd/system-sleep
@@ -43,6 +44,8 @@ install:
 	               $(DESTDIR)$(PREFIX)/lib/systemd/system/systemd-hibernate.service.d/10-gate.conf
 	install -m 644 systemd/z13-hibernate-boot-cleanup.service \
 	               $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-hibernate-boot-cleanup.service
+	install -m 644 systemd/z13-s2idle-wakeup.service \
+	               $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-s2idle-wakeup.service
 
 	# initcpio hook (two search paths: /etc and /usr/lib)
 	install -d $(DESTDIR)/etc/initcpio/hooks $(DESTDIR)/etc/initcpio/install
@@ -69,6 +72,7 @@ deploy: install
 	systemctl daemon-reload
 	systemctl enable z13-hibernate-gate.service
 	systemctl enable z13-hibernate-boot-cleanup.service
+	systemctl enable --now z13-s2idle-wakeup.service
 	@echo ""
 	@echo "Services enabled. Sleep policy and lid config installed."
 	@echo "Still needed (once, after first install):"
@@ -81,6 +85,8 @@ uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/lib/z13-hibernate/common.sh
 	rm -f $(DESTDIR)$(PREFIX)/lib/z13-hibernate/gate-hook.sh
 	rm -f $(DESTDIR)$(PREFIX)/lib/z13-hibernate/post-resume-hook.sh
+	rm -f $(DESTDIR)$(PREFIX)/lib/z13-hibernate/s2idle-wakeup-config.sh
+	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-s2idle-wakeup.service
 	-rmdir $(DESTDIR)$(PREFIX)/lib/z13-hibernate 2>/dev/null || true
 	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system-sleep/05-hibernate-hook.sh
 	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system-sleep/95-resume-hook.sh

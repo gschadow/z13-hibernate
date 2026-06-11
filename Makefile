@@ -20,6 +20,7 @@ install:
 	install -m 755 src/gate-hook.sh             $(DESTDIR)$(PREFIX)/lib/z13-hibernate/gate-hook.sh
 	install -m 755 src/post-resume-hook.sh      $(DESTDIR)$(PREFIX)/lib/z13-hibernate/post-resume-hook.sh
 	install -m 755 src/s2idle-wakeup-config.sh  $(DESTDIR)$(PREFIX)/lib/z13-hibernate/s2idle-wakeup-config.sh
+	install -m 755 src/cstate-hold.sh           $(DESTDIR)$(PREFIX)/lib/z13-hibernate/cstate-hold.sh
 
 	# systemd-sleep hooks (ordering via numeric prefix)
 	install -d $(DESTDIR)$(PREFIX)/lib/systemd/system-sleep

@@ -1,0 +1,32 @@
+Panic#1 Part2
+<4>[ 1905.075806] PKRU: 55555554
+<4>[ 1905.075807] Call Trace:
+<4>[ 1905.075809]  <TASK>
+<4>[ 1905.075810]  multi_cpu_stop+0xd1/0x1c0
+<4>[ 1905.075815]  ? __pfx_multi_cpu_stop+0x10/0x10
+<4>[ 1905.075816]  cpu_stopper_thread+0x9e/0x140
+<4>[ 1905.075818]  ? __pfx_smpboot_thread_fn+0x10/0x10
+<4>[ 1905.075821]  smpboot_thread_fn+0xf3/0x220
+<4>[ 1905.075822]  kthread+0xe1/0x120
+<4>[ 1905.075825]  ? __pfx_kthread+0x10/0x10
+<4>[ 1905.075827]  ret_from_fork+0x2a7/0x340
+<4>[ 1905.075831]  ? __pfx_kthread+0x10/0x10
+<4>[ 1905.075832]  ret_from_fork_asm+0x1a/0x30
+<4>[ 1905.075836]  </TASK>
+<0>[ 1905.075837] Kernel panic - not syncing: softlockup: hung tasks
+<4>[ 1905.075882] CPU: 22 UID: 0 PID: 154 Comm: migration/22 Tainted: G     U     OEL      7.0.9-1-cachyos-bore #1 PREEMPT(full)  bc1e4c53e2004f6d9f63dfb378a8caf9306eba7b
+<4>[ 1905.075885] Tainted: [U]=USER, [O]=OOT_MODULE, [E]=UNSIGNED_MODULE, [L]=SOFTLOCKUP
+<4>[ 1905.075887] Hardware name: ASUSTeK COMPUTER INC. ROG Flow Z13 GZ302EA_GZ302EA/GZ302EA, BIOS GZ302EA.311 08/01/2025
+<4>[ 1905.075888] Stopper: multi_cpu_stop+0x0/0x1c0 <- __stop_cpus.constprop.0+0x6d/0xb0
+<4>[ 1905.075891] Call Trace:
+<4>[ 1905.075893]  <IRQ>
+<4>[ 1905.075894]  dump_stack_lvl+0x5d/0x80
+<4>[ 1905.075897]  vpanic+0x20a/0x410
+<4>[ 1905.075901]  ? __pfx_watchdog_timer_fn+0x10/0x10
+<4>[ 1905.075904]  panic+0x6b/0x70
+<4>[ 1905.075906]  watchdog_timer_fn.cold+0x254/0x29f
+<4>[ 1905.075909]  ? __pfx_watchdog_timer_fn+0x10/0x10
+<4>[ 1905.075911]  __hrtimer_run_queues+0x158/0x470
+<4>[ 1905.075914]  ? sched_balance_domains+0xf6/0x320
+<4>[ 1905.075918]  hrtimer_interrupt+0x111/0x400
+<4>[ 1905.075920]  ? sched_clock+0x10/0x30

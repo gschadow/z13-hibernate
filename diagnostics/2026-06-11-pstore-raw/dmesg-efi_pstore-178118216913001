@@ -1,0 +1,18 @@
+Panic#1 Part13
+<6>[ 1880.939467] snd_hda_intel 0000:c4:00.1: PM: calling pci_pm_freeze_noirq @ 2963, parent: 0000:00:08.1
+<6>[ 1880.939646] pci 0000:00:18.7: PM: pci_pm_freeze_noirq returned 0 after 5029 usecs
+<6>[ 1880.939647] pci 0000:00:18.5: PM: pci_pm_freeze_noirq returned 0 after 5030 usecs
+<6>[ 1880.939651] pcieport 0000:00:01.2: PM: calling pci_pm_freeze_noirq @ 12648, parent: pci0000:00
+<6>[ 1880.939685] snd_acp_pci 0000:c4:00.5: PM: calling pci_pm_freeze_noirq @ 25479, parent: 0000:00:08.1
+<6>[ 1880.939728] pci 0000:00:03.0: PM: pci_pm_freeze_noirq returned 0 after 5109 usecs
+<6>[ 1880.939729] pci 0000:00:18.4: PM: pci_pm_freeze_noirq returned 0 after 5106 usecs
+<6>[ 1880.939732] amdxdna 0000:c5:00.1: PM: calling pci_pm_freeze_noirq @ 11055, parent: 0000:00:08.2
+<6>[ 1880.939742] pcieport 0000:00:01.1: PM: calling pci_pm_freeze_noirq @ 25484, parent: pci0000:00
+<6>[ 1880.939763] pci 0000:00:18.0: PM: pci_pm_freeze_noirq returned 0 after 5134 usecs
+<6>[ 1880.939763] pci 0000:00:18.2: PM: pci_pm_freeze_noirq returned 0 after 5135 usecs
+<6>[ 1880.939764] pci 0000:00:18.6: PM: pci_pm_freeze_noirq returned 0 after 5143 usecs
+<6>[ 1880.939766] k10temp 0000:00:18.3: PM: calling pci_pm_freeze_noirq @ 25386, parent: pci0000:00
+<6>[ 1880.939774] pci 0000:00:18.1: PM: pci_pm_freeze_noirq returned 0 after 5146 usecs
+<6>[ 1880.939807] pci 0000:00:01.0: PM: pci_pm_freeze_noirq returned 0 after 5176 usecs
+<6>[ 1880.939809] pci 0000:00:02.0: PM: pci_pm_freeze_noirq returned 0 after 5178 usecs
+<6>[ 1880.939810] pci 0000:00:00.0: PM: pci_pm_freeze_noirq returned 0 after 5150 usecs

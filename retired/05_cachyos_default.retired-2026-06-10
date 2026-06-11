@@ -1,0 +1,23 @@
+#!/bin/sh
+cat << 'CUSTOMEOF'
+menuentry "CachyOS BORE (default - recommended for IO/hiber and daily)" --class arch --class gnu-linux --class gnu --class os $menuentry_id_option 'custom-cachy-default' {
+	echo	'Loading Linux linux-cachyos-bore ...'
+	linux	/vmlinuz-linux-cachyos-bore root=UUID=dedc177d-1667-4134-b57a-bc28ae6cfa6b rw rd.luks.name=d1684e38-de4e-4f08-a0ae-9f61e917d7db=root rd.luks.name=cdce8573-eaf3-47db-8ba6-5f8d430a5c4d=hibernate root=/dev/mapper/root resume=/dev/mapper/hibernate zswap.enabled=0 nvme_core.default_ps_max_latency_us=0 amdgpu.runpm=0 amdgpu.gpu_recovery=1 amdgpu.lockup_timeout=10000,10000,10000,10000 amdgpu.noretry=0 amdgpu.dc=1 amdgpu.aspm=0 amdgpu.sg_display=0 transparent_hugepage=always nvme_core.io_timeout=300 pci=pcie_bus_perf loglevel=7 no_console_suspend
+	echo	'Loading initial ramdisk ...'
+	initrd	/amd-ucode.img /initramfs-linux-cachyos-bore.img
+}
+
+menuentry "Stock Arch Linux (fallback)" --class arch --class gnu-linux --class gnu --class os $menuentry_id_option 'custom-stock' {
+	echo	'Loading Linux linux (stock) ...'
+	linux	/vmlinuz-linux root=UUID=dedc177d-1667-4134-b57a-bc28ae6cfa6b rw rd.luks.name=d1684e38-de4e-4f08-a0ae-9f61e917d7db=root rd.luks.name=cdce8573-eaf3-47db-8ba6-5f8d430a5c4d=hibernate root=/dev/mapper/root resume=/dev/mapper/hibernate zswap.enabled=0 nvme_core.default_ps_max_latency_us=0 amdgpu.runpm=0 amdgpu.gpu_recovery=1 amdgpu.lockup_timeout=10000,10000,10000,10000 amdgpu.noretry=0 amdgpu.dc=1 amdgpu.aspm=0 amdgpu.sg_display=0 transparent_hugepage=always nvme_core.io_timeout=300 pci=pcie_bus_perf loglevel=7 no_console_suspend
+	echo	'Loading initial ramdisk ...'
+	initrd	/amd-ucode.img /initramfs-linux.img
+}
+
+menuentry "CachyOS BORE 7.0.11 test (hibdebug)" --class arch --class gnu-linux --class gnu --class os $menuentry_id_option 'custom-7.0.11-test' {
+	echo	'Loading Linux linux-cachyos-bore 7.0.11 test ...'
+	linux	/vmlinuz-7.0.11-1-cachyos-bore-test root=UUID=dedc177d-1667-4134-b57a-bc28ae6cfa6b rw rd.luks.name=d1684e38-de4e-4f08-a0ae-9f61e917d7db=root rd.luks.name=cdce8573-eaf3-47db-8ba6-5f8d430a5c4d=hibernate root=/dev/mapper/root resume=/dev/mapper/hibernate zswap.enabled=0 nvme_core.default_ps_max_latency_us=0 amdgpu.runpm=0 amdgpu.gpu_recovery=1 amdgpu.lockup_timeout=10000,10000,10000,10000 amdgpu.noretry=0 amdgpu.dc=1 amdgpu.aspm=0 amdgpu.sg_display=0 transparent_hugepage=always nvme_core.io_timeout=300 pci=pcie_bus_perf loglevel=7 no_console_suspend
+	echo	'Loading initial ramdisk ...'
+	initrd	/amd-ucode.img /initramfs-7.0.11-1-cachyos-bore-test.img
+}
+CUSTOMEOF

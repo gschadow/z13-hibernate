@@ -6,7 +6,11 @@ DefaultDependencies=no
 [Service]
 Type=oneshot
 ExecStart=/usr/lib/z13-hibernate/gate-hook.sh
-RemainAfterExit=yes
+# RemainAfterExit must be NO: with yes, the unit stays "active" after the
+# first hibernate of a boot, and systemd silently SKIPS it for every later
+# hibernate.target start (2026-06-11: second hibernate of the boot ran with
+# no gate — no quiesce, no LED stages). oneshot+no => re-runs every time.
+RemainAfterExit=no
 TimeoutStartSec=180
 
 [Install]

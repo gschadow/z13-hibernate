@@ -1,0 +1,26 @@
+Panic#1 Part12
+<4>[10244.405461] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+<4>[10244.405461] CR2: 0000000000000000 CR3: 0000000336024000 CR4: 0000000000f50ef0
+<4>[10244.405462] PKRU: 55555554
+<4>[10244.405462] Call Trace:
+<4>[10244.405462]  <TASK>
+<4>[10244.405462]  multi_cpu_stop+0xd1/0x1c0
+<4>[10244.405464]  ? __pfx_multi_cpu_stop+0x10/0x10
+<4>[10244.405465]  cpu_stopper_thread+0x9e/0x140
+<4>[10244.405466]  ? __pfx_smpboot_thread_fn+0x10/0x10
+<4>[10244.405468]  smpboot_thread_fn+0xf3/0x220
+<4>[10244.405469]  kthread+0xe1/0x120
+<4>[10244.405470]  ? __pfx_kthread+0x10/0x10
+<4>[10244.405471]  ret_from_fork+0x2a7/0x340
+<4>[10244.405473]  ? __pfx_kthread+0x10/0x10
+<4>[10244.405474]  ret_from_fork_asm+0x1a/0x30
+<4>[10244.405476]  </TASK>
+<4>[10244.405476] NMI backtrace for cpu 31
+<4>[10244.405477] CPU: 31 UID: 0 PID: 208 Comm: migration/31 Tainted: G     U  W  OE       7.0.9-1-cachyos-bore #1 PREEMPT(full)  bc1e4c53e2004f6d9f63dfb378a8caf9306eba7b
+<4>[10244.405479] Tainted: [U]=USER, [W]=WARN, [O]=OOT_MODULE, [E]=UNSIGNED_MODULE
+<4>[10244.405480] Hardware name: ASUSTeK COMPUTER INC. ROG Flow Z13 GZ302EA_GZ302EA/GZ302EA, BIOS GZ302EA.311 08/01/2025
+<4>[10244.405480] Stopper: multi_cpu_stop+0x0/0x1c0 <- __stop_cpus.constprop.0+0x6d/0xb0
+<4>[10244.405483] RIP: 0010:stop_machine_yield+0x6/0x10
+<4>[10244.405484] Code: 20 7c d7 ff eb c3 e8 79 70 30 01 66 0f 1f 84 00 00 00 00 00 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 0f 1f 40 d6 f3 90 <c3> cc cc cc cc 0f 1f 44 00 00 90 90 90 90 90 90 90 90 90 90 90 90
+<4>[10244.405485] RSP: 0018:ffffd5650092fe48 EFLAGS: 00000246
+<4>[10244.405486] RAX: 0000000000000201 RBX: ffffd5650bc8fcf0 RCX: 0000000000000002

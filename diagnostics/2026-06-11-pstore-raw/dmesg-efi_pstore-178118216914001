@@ -1,0 +1,19 @@
+Panic#1 Part14
+<7>[ 1880.934075] PM: late freeze of devices complete after 1.483 msecs
+<7>[ 1880.934084] Setting wake for GPIO 8 to enable
+<7>[ 1880.934102] Setting wake for GPIO 9 to enable
+<6>[ 1880.934613] pci 0000:00:18.7: PM: calling pci_pm_freeze_noirq @ 12648, parent: pci0000:00
+<6>[ 1880.934613] pci 0000:00:18.5: PM: calling pci_pm_freeze_noirq @ 25485, parent: pci0000:00
+<6>[ 1880.934613] pci 0000:00:18.6: PM: calling pci_pm_freeze_noirq @ 25472, parent: pci0000:00
+<6>[ 1880.934613] pci 0000:c5:00.0: PM: calling pci_pm_freeze_noirq @ 2967, parent: 0000:00:08.2
+<6>[ 1880.934617] pci 0000:00:03.0: PM: calling pci_pm_freeze_noirq @ 11055, parent: pci0000:00
+<6>[ 1880.934615] pci 0000:00:18.0: PM: calling pci_pm_freeze_noirq @ 2962, parent: pci0000:00
+<6>[ 1880.934614] pci 0000:00:18.4: PM: calling pci_pm_freeze_noirq @ 25470, parent: pci0000:00
+<6>[ 1880.934617] pci 0000:00:18.2: PM: calling pci_pm_freeze_noirq @ 25386, parent: pci0000:00
+<6>[ 1880.934617] pci 0000:00:18.1: PM: calling pci_pm_freeze_noirq @ 25483, parent: pci0000:00
+<6>[ 1880.934619] pci 0000:00:00.0: PM: calling pci_pm_freeze_noirq @ 25474, parent: pci0000:00
+<6>[ 1880.934618] pci 0000:00:08.0: PM: calling pci_pm_freeze_noirq @ 14853, parent: pci0000:00
+<6>[ 1880.934620] pci 0000:00:02.0: PM: calling pci_pm_freeze_noirq @ 25477, parent: pci0000:00
+<6>[ 1880.934620] pci 0000:00:01.0: PM: calling pci_pm_freeze_noirq @ 25466, parent: pci0000:00
+<6>[ 1880.934624] sdhci-pci 0000:c1:00.0: PM: calling pci_pm_freeze_noirq @ 25473, parent: 0000:00:02.2
+<6>[ 1880.939461] snd_hda_intel 0000:c4:00.6: PM: calling pci_pm_freeze_noirq @ 25476, parent: 0000:00:08.1

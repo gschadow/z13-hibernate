@@ -1,0 +1,35 @@
+Panic#1 Part7
+<7>[ 1881.036312] Calling irq_gc_resume+0x0/0xf0
+<7>[ 1881.036318] Calling irq_pm_syscore_resume+0x0/0x20
+<7>[ 1881.036362] Calling timekeeping_syscore_resume+0x0/0x10
+<7>[ 1881.036412] Timekeeping suspended for 8587.369 seconds
+<7>[ 1881.036431] Calling ledtrig_cpu_syscore_resume+0x0/0x20
+<7>[ 1881.036435] Calling init_counter_refs+0x0/0x40
+<7>[ 1881.036438] Calling mce_syscore_resume+0x0/0x130
+<7>[ 1881.036714] Calling microcode_bsp_syscore_resume+0x0/0xf0
+<6>[ 1881.037167] Enabling non-boot CPUs ...
+<6>[ 1881.037251] smpboot: Booting Node 0 Processor 1 APIC 0x2
+<6>[ 1881.039168] CPU1 is up
+<6>[ 1881.039197] smpboot: Booting Node 0 Processor 2 APIC 0x4
+<6>[ 1881.041005] CPU2 is up
+<6>[ 1881.041022] smpboot: Booting Node 0 Processor 3 APIC 0x6
+<6>[ 1881.042613] CPU3 is up
+<6>[ 1881.042626] smpboot: Booting Node 0 Processor 4 APIC 0x8
+<6>[ 1881.044133] CPU4 is up
+<6>[ 1881.044146] smpboot: Booting Node 0 Processor 5 APIC 0xa
+<6>[ 1881.045768] CPU5 is up
+<6>[ 1881.045787] smpboot: Booting Node 0 Processor 6 APIC 0xc
+<6>[ 1881.047293] CPU6 is up
+<6>[ 1881.047310] smpboot: Booting Node 0 Processor 7 APIC 0xe
+<6>[ 1881.048939] CPU7 is up
+<6>[ 1881.048965] smpboot: Booting Node 0 Processor 8 APIC 0x10
+<6>[ 1881.051211] CPU8 is up
+<6>[ 1881.051231] smpboot: Booting Node 0 Processor 9 APIC 0x12
+<6>[ 1881.053082] CPU9 is up
+<6>[ 1881.053103] smpboot: Booting Node 0 Processor 10 APIC 0x14
+<6>[ 1881.054932] CPU10 is up
+<6>[ 1881.054959] smpboot: Booting Node 0 Processor 11 APIC 0x16
+<6>[ 1881.056624] CPU11 is up
+<6>[ 1881.056643] smpboot: Booting Node 0 Processor 12 APIC 0x18
+<6>[ 1881.058441] CPU12 is up
+<6>[ 1881.058461] smpboot: Booting Node 0 Processor 13 APIC 0x1a

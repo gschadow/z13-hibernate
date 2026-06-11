@@ -1,0 +1,19 @@
+Panic#1 Part22
+<6>[ 1876.979240] pci 0000:00:00.2: PM: calling pci_pm_freeze @ 2971, parent: pci0000:00
+<6>[ 1876.979245] i8042 kbd 00:01: PM: calling pnp_bus_freeze @ 25329, parent: pnp0
+<6>[ 1876.979249] i8042 kbd 00:01: PM: pnp_bus_freeze returned 0 after 0 usecs
+<6>[ 1876.979251] rtc_cmos 00:00: PM: calling pnp_bus_freeze @ 25329, parent: pnp0
+<6>[ 1876.979262] pci 0000:00:00.2: PM: pci_pm_freeze returned 0 after 12 usecs
+<6>[ 1876.979284] rtc_cmos 00:00: PM: pnp_bus_freeze returned 0 after 31 usecs
+<6>[ 1876.979287] platform efivars.0: PM: calling platform_pm_freeze @ 25329, parent: platform
+<6>[ 1876.979288] platform efivars.0: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979289] platform rtc-efi.0: PM: calling platform_pm_freeze @ 25329, parent: platform
+<6>[ 1876.979290] platform rtc-efi.0: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979295] platform AMDI0080:00: PM: calling platform_pm_freeze @ 25329, parent: platform
+<6>[ 1876.979296] platform AMDI0080:00: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979298] acpi-wmi PNP0C14:02: PM: calling acpi_subsys_freeze @ 25329, parent: platform
+<6>[ 1876.979300] acpi-wmi PNP0C14:02: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979301] acpi-thermal LNXTHERM:02: PM: calling acpi_subsys_freeze @ 25329, parent: platform
+<6>[ 1876.979302] acpi-thermal LNXTHERM:02: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979304] acpi-thermal LNXTHERM:01: PM: calling acpi_subsys_freeze @ 25329, parent: platform
+<6>[ 1876.979305] acpi-thermal LNXTHERM:01: PM: acpi_subsys_freeze returned 0 after 0 usecs

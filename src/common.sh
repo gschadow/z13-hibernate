@@ -58,12 +58,30 @@ apply_power_profile() {
 }
 
 # Force high performance for the write phase (called from hibernate-hook.sh)
+#
+# On battery this must NOT raise PPT: the 80/92/93W boost during the image
+# write pulls more than the battery rail tolerates and the EC hard-resets
+# the machine (observed 2026-06-10: first battery hibernate, 75% charge,
+# reset ~30-90s into the write phase, EFI HibernateLocation set but no
+# image signature on swap, pstore empty = power cut, not kernel panic).
+# The image is only a few GB; Balanced writes it a few seconds slower.
 force_high_performance() {
   if ! command -v asusctl >/dev/null 2>&1; then
     kmsg "common: asusctl not found, skipping high perf boost"
     return
   fi
-  kmsg "common: forcing Performance + high PPT for snapshot write phase"
+  if is_on_battery; then
+    kmsg "common: on battery — Balanced + battery PPT for write phase (no boost, EC brownout reset risk)"
+    asusctl profile set Balanced 2>/dev/null || true
+    asusctl armoury set ppt_pl1_spl 60 2>/dev/null || true
+    asusctl armoury set ppt_pl2_sppt 75 2>/dev/null || true
+    asusctl armoury set ppt_pl3_fppt 86 2>/dev/null || true
+    for epp in /sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference; do
+      [ -w "$epp" ] && echo balance_performance > "$epp" 2>/dev/null || true
+    done
+    return
+  fi
+  kmsg "common: on AC — forcing Performance + high PPT for snapshot write phase"
   asusctl profile set Performance 2>/dev/null || true
   asusctl armoury set ppt_pl1_spl 80 2>/dev/null || true
   asusctl armoury set ppt_pl2_sppt 92 2>/dev/null || true

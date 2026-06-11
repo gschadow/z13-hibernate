@@ -1,0 +1,33 @@
+Panic#1 Part8
+<6>[ 1881.018172] smpboot: CPU 7 is now offline
+<6>[ 1881.020630] smpboot: CPU 6 is now offline
+<6>[ 1881.023242] smpboot: CPU 5 is now offline
+<6>[ 1881.025613] smpboot: CPU 4 is now offline
+<6>[ 1881.027966] smpboot: CPU 3 is now offline
+<6>[ 1881.030389] smpboot: CPU 2 is now offline
+<6>[ 1881.033007] smpboot: CPU 1 is now offline
+<7>[ 1881.034131] Checking wakeup interrupts
+<7>[ 1881.034132] Calling mce_syscore_suspend+0x0/0x20
+<7>[ 1881.034140] Calling ledtrig_cpu_syscore_suspend+0x0/0x20
+<7>[ 1881.034145] Calling timekeeping_syscore_suspend+0x0/0x10
+<7>[ 1881.034187] Calling irq_gc_suspend+0x0/0x110
+<7>[ 1881.034190] Calling ioapic_suspend+0x0/0x10
+<7>[ 1881.034296] Calling i8259A_suspend+0x0/0x30
+<7>[ 1881.034301] Calling perf_ibs_suspend+0x0/0x40
+<7>[ 1881.034304] Calling amd_iommu_suspend+0x0/0x120
+<7>[ 1881.034309] Calling fw_suspend+0x0/0x20
+<7>[ 1881.034457] Calling acpi_save_bm_rld+0x0/0x30
+<7>[ 1881.034469] Calling lapic_suspend+0x0/0x1c0
+<7>[ 1881.034651] PM: hibernation: Creating image
+<7>[ 1881.610621] PM: hibernation: Need to copy 3670630 pages
+<7>[ 1881.610626] PM: hibernation: Normal pages needed: 3670630 + 1024, available pages: 28739321
+<7>[ 1881.035371] Calling lapic_resume+0x0/0x2e0
+<6>[ 1881.035688] AMD-Vi: Virtual APIC enabled
+<7>[ 1881.035725] Calling acpi_restore_bm_rld+0x0/0x70
+<7>[ 1881.035766] Calling irqrouter_resume+0x0/0x90
+<7>[ 1881.035770] Calling amd_iommu_resume+0x0/0x260
+<6>[ 1881.035993] AMD-Vi: Virtual APIC enabled
+<7>[ 1881.036027] Calling perf_ibs_resume+0x0/0x50
+<6>[ 1881.036053] LVT offset 0 assigned for vector 0x400
+<7>[ 1881.036055] Calling i8259A_resume+0x0/0x40
+<7>[ 1881.036209] Calling ioapic_resume+0x0/0x160

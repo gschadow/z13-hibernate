@@ -24,6 +24,45 @@ kmsg "hook: === BEGIN HIBERNATE HOOK (perf params + breathe) ==="
 echo "=== Pre-hibernate hook START $(date) ===" | tee -a "$LOGFILE"
 kmsg "hook: kernel=$(uname -r) (gate did pre-check; this hook does perf + breathe spinner)"
 
+# pm_async: z13-s2idle-wakeup.service sets pm_async=0 globally because the
+# lid-close abort/re-enter race hangs amdgpu under async s2idle callbacks.
+# But every historically successful hibernate ran with pm_async=1, and the
+# only two hibernates attempted under pm_async=0 (2026-06-10, both on
+# battery) hung in the device-suspend/snapshot phase. Restore async for the
+# hibernate window; the post-resume hook sets it back to 0 for s2idle.
+echo 1 > /sys/power/pm_async 2>/dev/null || true
+kmsg "hook: pm_async=1 for hibernate (s2idle keeps 0)"
+
+# Diagnostic, scoped to the hibernate window (restored by resume hook): if
+# the snapshot phase hangs again, convert the hang into a panic so efi_pstore
+# captures the stack of the offending task, then auto-reboot after 30s.
+# Scoped because a 2-min D-state during normal desktop use must NOT panic.
+# The 2026-06-11 AC hang never tripped hung_task (no auto-reboot), so widen
+# the net: 60s hung-task window, all-CPU backtraces in the dump, and the
+# NMI hardlockup detector for busy-spins with interrupts off.
+sysctl -q kernel.hung_task_panic=1 2>/dev/null || true
+sysctl -q kernel.hung_task_timeout_secs=60 2>/dev/null || true
+sysctl -q kernel.hung_task_all_cpu_backtrace=1 2>/dev/null || true
+sysctl -q kernel.softlockup_panic=1 2>/dev/null || true
+sysctl -q kernel.softlockup_all_cpu_backtrace=1 2>/dev/null || true
+sysctl -q kernel.hardlockup_panic=1 2>/dev/null || true
+sysctl -q kernel.panic=30 2>/dev/null || true
+kmsg "hook: hung_task(60s)/softlockup/hardlockup panic armed for hibernate window (pstore capture)"
+
+# Restore-side stop_machine deadlock (pstore dumps 2026-06-11): right after the
+# S4 image restore re-enables the non-boot CPUs, a stop_machine call hangs —
+# the NMI backtraces show several CPUs "idling at io_idle" that never run their
+# migration threads. Reschedule IPIs to those CPUs are lost (platform/BIOS S4
+# bug); a CPU in deep ACPI io_idle needs a real interrupt to wake, so it sleeps
+# through the stop request and every other CPU spins forever. CPUs held at
+# C1/mwait wake via the monitored need-resched flag WITHOUT an IPI, so pin the
+# PM QoS latency to 0 for the whole hibernate window. The holder process (and
+# its in-kernel QoS request) is frozen into the image, so the restore side is
+# protected too; the resume hook stops the unit.
+systemd-run --collect --unit=z13-cstate-hold /usr/lib/z13-hibernate/cstate-hold.sh 2>/dev/null \
+  && kmsg "hook: deep C-states disabled for hibernate+restore window (z13-cstate-hold)" \
+  || kmsg "hook: WARNING: could not start z13-cstate-hold (deep-idle IPI-loss hang possible)"
+
 # Performance settings (the critical boost + tunings right before write)
 # No profile apply here that looks at battery; we always want max for the snapshot.
 
@@ -43,6 +82,11 @@ _wifi_if=wlp194s0
 if ip link show "$_wifi_if" &>/dev/null; then
   ip link set "$_wifi_if" down 2>/dev/null || true
   kmsg "hook: ${_wifi_if} brought down"
+  # Give the RX path a moment to drain before unload: yanking the module with
+  # packets in flight can leave a page_pool that never shuts down
+  # ("page_pool_release_retry stalled pool shutdown", 2026-06-11) and the
+  # subsequent kernel hibernate entry wedges on it.
+  sleep 1
 fi
 _mt_mods=$(lsmod | awk 'NR>1 && /^mt79/ {print $1}' | tr '\n' ' ')
 kmsg "hook: mt79xx lsmod: ${_mt_mods:-none}"
@@ -59,7 +103,12 @@ fi
 # VirtualBox: vboxdrv PM callbacks deadlock the kernel at hibernation entry when any VM is
 # running. Save running VMs first (they resume from saved state after you start VBox post-resume),
 # then unload the modules. Without this, the machine hangs indefinitely at hibernation entry.
-if lsmod | grep -q '^vboxdrv'; then
+# NOTE: do NOT use `lsmod | grep -q` here: under `set -o pipefail`, grep -q
+# exiting at first match can SIGPIPE lsmod and fail the whole pipeline — the
+# branch silently skips even when the module IS loaded (bit us 2026-06-11:
+# vboxdrv stayed loaded into the snapshot and the restore deadlocked in
+# stop_machine). /sys/module is race-free.
+if [ -d /sys/module/vboxdrv ]; then
   _vbox_user=$(loginctl list-sessions --no-legend 2>/dev/null | awk '($4 == "active" || $3 == "seat0") { print $3; exit }')
   [ -z "$_vbox_user" ] && _vbox_user=gunther
   _running=$(sudo -u "$_vbox_user" VBoxManage list runningvms 2>/dev/null | awk -F'"' '{print $2}')
@@ -85,11 +134,22 @@ fi
 echo shutdown > /sys/power/disk 2>/dev/null || true
 kmsg "hook: hibernate disk mode: $(cat /sys/power/disk 2>/dev/null | tr -d '\n')"
 
+# Marker EARLY (was at the end of this hook): systemd-sleep kills a sleep
+# hook after ~90s and proceeds to hibernate anyway (2026-06-11: a slow sync
+# got this hook killed mid-run — no marker meant the resume hooks skipped all
+# recovery). The marker must exist for any hibernate that this hook started.
+touch /run/z13-was-hibernated || true
+kmsg "hook: created hibernate marker /run/z13-was-hibernated (early; resume hooks check this)"
+
 kmsg "hook: drop_caches at $(date '+%H:%M:%S')"
 echo 3 > /proc/sys/vm/drop_caches
-kmsg "hook: sync starting at $(date '+%H:%M:%S') (may block several minutes on battery with dirty pages)"
-sync
-kmsg "hook: sync done at $(date '+%H:%M:%S')"
+kmsg "hook: sync starting at $(date '+%H:%M:%S') (bounded: hook is killed at ~90s total)"
+# Bounded: an unbounded sync blocked 88s+ on battery once and the hook got
+# killed before setting compression/PPT/breathe. Dirty pages that don't make
+# it are frozen into the image and written on the next boot's flush anyway.
+timeout 45 sync \
+  && kmsg "hook: sync done at $(date '+%H:%M:%S')" \
+  || kmsg "hook: WARNING: sync exceeded 45s, continuing without full flush"
 
 echo 1024 > /sys/block/nvme0n1/queue/nr_requests 2>/dev/null || true
 echo 4096 > /sys/block/nvme0n1/queue/max_sectors_kb 2>/dev/null || true
@@ -123,12 +183,8 @@ kmsg "hook: breathe effect set for write phase"
 
 kmsg "hook: prep complete (perf params only) — proceeding to hibernation"
 
-# Create a marker so the resume path knows this was a *real hibernate* (S4),
-# not a regular suspend-to-RAM (S3). The resume hooks will only do heavy
-# screen recovery / CONT if this marker exists. This prevents tearing a
-# perfectly good lock screen or session on normal lid-close wakes.
-touch /run/z13-was-hibernated || true
-kmsg "hook: created hibernate marker /run/z13-was-hibernated (resume hooks will check this)"
+# (hibernate marker is created early in this hook — see above — so it exists
+# even if systemd-sleep kills a slow hook run at the ~90s timeout.)
 
 # No watcher by default (per current decision: little benefit, adds noise).
 # If you really want it back, add a debug flag check + bg loop here writing "Hibernating progress..."

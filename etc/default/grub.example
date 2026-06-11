@@ -1,12 +1,23 @@
 # /etc/default/grub
 
-GRUB_DEFAULT="CachyOS BORE (default - recommended for IO/hiber and daily)"
+# First menu entry = newest auto-generated kernel entry. Do NOT pin to a
+# custom menuentry title: hardcoded entries in /etc/grub.d/ silently ignore
+# the cmdline below (learned the hard way, twice).
+GRUB_DEFAULT=0
 GRUB_TIMEOUT=5
 GRUB_TIMEOUT_STYLE=menu
 GRUB_DISTRIBUTOR="CachyOS"
 
-GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet"
-GRUB_CMDLINE_LINUX="rd.luks.name=ROOT_LUKS_UUID=root rd.luks.name=HIB_LUKS_UUID=hibernate root=/dev/mapper/root resume=/dev/mapper/hibernate zswap.enabled=0 nvme_core.default_ps_max_latency_us=0 amdgpu.runpm=0 amdgpu.gpu_recovery=1 amdgpu.lockup_timeout=10000,10000,10000,10000 amdgpu.noretry=0 amdgpu.dc=1 amdgpu.aspm=0 amdgpu.sg_display=0 transparent_hugepage=always nvme_core.io_timeout=300 pci=pcie_bus_perf"
+# loglevel=7 + no_console_suspend: verbose console during suspend/hibernate
+# phases — needed to see the image-write progress and any errors there.
+GRUB_CMDLINE_LINUX_DEFAULT="loglevel=7 no_console_suspend"
+GRUB_CMDLINE_LINUX="rd.luks.name=ROOT_LUKS_UUID=root rd.luks.name=HIB_LUKS_UUID=hibernate root=/dev/mapper/root resume=/dev/mapper/hibernate zswap.enabled=0 nvme_core.default_ps_max_latency_us=0 amdgpu.runpm=0 amdgpu.gpu_recovery=1 amdgpu.lockup_timeout=10000,10000,10000,10000 amdgpu.noretry=0 amdgpu.dc=1 amdgpu.aspm=0 amdgpu.sg_display=0 transparent_hugepage=always nvme_core.io_timeout=300 pci=pcie_bus_perf efi_pstore.pstore_disable=0"
+
+# efi_pstore.pstore_disable=0: CachyOS builds the EFI pstore backend disabled
+# by default. Enabling it makes a kernel panic during the screen-off phases of
+# suspend/hibernate (devices suspended, journal frozen, console invisible)
+# leave a kmsg dump in EFI variables, readable after reboot in /sys/fs/pstore.
+# Without it, a crash in those phases is indistinguishable from an EC power cut.
 
 # This is a TEMPLATE. Replace ROOT_LUKS_UUID and HIB_LUKS_UUID with your actual values.
 # Find them with:

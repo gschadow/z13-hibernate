@@ -1,0 +1,27 @@
+Panic#1 Part3
+<4>[10244.405741] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+<4>[10244.405742] CR2: 0000000000000000 CR3: 0000000336024000 CR4: 0000000000f50ef0
+<4>[10244.405743] PKRU: 55555554
+<4>[10244.405743] Call Trace:
+<4>[10244.405744]  <TASK>
+<4>[10244.405744]  multi_cpu_stop+0xd1/0x1c0
+<4>[10244.405747]  ? __pfx_multi_cpu_stop+0x10/0x10
+<4>[10244.405748]  cpu_stopper_thread+0x9e/0x140
+<4>[10244.405750]  ? __pfx_smpboot_thread_fn+0x10/0x10
+<4>[10244.405751]  smpboot_thread_fn+0xf3/0x220
+<4>[10244.405753]  kthread+0xe1/0x120
+<4>[10244.405754]  ? __pfx_kthread+0x10/0x10
+<4>[10244.405756]  ret_from_fork+0x2a7/0x340
+<4>[10244.405757]  ? __pfx_kthread+0x10/0x10
+<4>[10244.405758]  ret_from_fork_asm+0x1a/0x30
+<4>[10244.405761]  </TASK>
+<4>[10244.405787] NMI backtrace for cpu 10 skipped: idling at io_idle+0x3/0x30
+<6>[10244.406439] INFO: NMI handler (nmi_cpu_backtrace_handler) took too long to run: 1.480 msecs
+<4>[10244.406433] NMI backtrace for cpu 11 skipped: idling at io_idle+0x3/0x30
+<6>[10244.407106] INFO: NMI handler (nmi_cpu_backtrace_handler) took too long to run: 2.142 msecs
+<4>[10244.407097] NMI backtrace for cpu 13 skipped: idling at io_idle+0x3/0x30
+<6>[10244.407783] INFO: NMI handler (nmi_cpu_backtrace_handler) took too long to run: 2.821 msecs
+<4>[10244.407775] NMI backtrace for cpu 9 skipped: idling at io_idle+0x3/0x30
+<6>[10244.408457] INFO: NMI handler (nmi_cpu_backtrace_handler) took too long to run: 3.488 msecs
+<4>[10244.408448] NMI backtrace for cpu 14 skipped: idling at io_idle+0x3/0x30
+<6>[10244.409134] INFO: NMI handler (nmi_cpu_backtrace_handler) took too long to run: 4.169 msecs

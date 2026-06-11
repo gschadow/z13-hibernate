@@ -1,0 +1,22 @@
+Panic#1 Part15
+<6>[ 1880.932536] pcieport 0000:00:08.1: PM: pci_pm_freeze returned 0 after 29 usecs
+<7>[ 1880.932581] PM: freeze of devices complete after 3987.940 msecs
+<6>[ 1880.933445] i2c_designware AMDI0010:03: PM: calling i2c_dw_suspend @ 25485, parent: platform
+<6>[ 1880.933466] i2c_designware AMDI0010:00: PM: calling i2c_dw_suspend @ 12648, parent: platform
+<6>[ 1880.933477] i2c_designware AMDI0010:03: PM: i2c_dw_suspend returned 0 after 26 usecs
+<6>[ 1880.933491] i2c_designware AMDI0010:00: PM: i2c_dw_suspend returned 0 after 10 usecs
+<6>[ 1880.933503] i2c_designware AMDI0010:02: PM: calling i2c_dw_suspend @ 25391, parent: platform
+<6>[ 1880.933535] i2c_designware AMDI0010:02: PM: i2c_dw_suspend returned 0 after 18 usecs
+<6>[ 1880.933765] i2c_designware AMDI0010:01: PM: calling i2c_dw_suspend @ 25492, parent: platform
+<6>[ 1880.933765] amd_gpio AMDI0030:00: PM: calling amd_gpio_hibernate @ 25329, parent: platform
+<7>[ 1880.933788] Disabling GPIO #0 interrupt for hibernate.
+<7>[ 1880.933792] Disabling GPIO #2 interrupt for hibernate.
+<6>[ 1880.933795] i2c_designware AMDI0010:01: PM: i2c_dw_suspend returned 0 after 24 usecs
+<7>[ 1880.933799] Disabling GPIO #3 interrupt for hibernate.
+<7>[ 1880.933801] Disabling GPIO #4 interrupt for hibernate.
+<7>[ 1880.933805] Clearing debounce for GPIO #4 during hibernate.
+<7>[ 1880.933808] Disabling GPIO #8 interrupt for hibernate.
+<7>[ 1880.933811] Disabling GPIO #9 interrupt for hibernate.
+<7>[ 1880.933817] Disabling GPIO #58 interrupt for hibernate.
+<7>[ 1880.933820] Disabling GPIO #59 interrupt for hibernate.
+<6>[ 1880.933830] amd_gpio AMDI0030:00: PM: amd_gpio_hibernate returned 0 after 45 usecs

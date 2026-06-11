@@ -1,0 +1,27 @@
+Panic#1 Part1
+<4>[10244.412707]  __sysvec_apic_timer_interrupt+0x58/0x140
+<4>[10244.412720]  sysvec_apic_timer_interrupt+0x6c/0x90
+<4>[10244.412734]  </IRQ>
+<4>[10244.412735]  <TASK>
+<4>[10244.412740]  asm_sysvec_apic_timer_interrupt+0x1a/0x20
+<4>[10244.412746] RIP: 0010:stop_machine_yield+0x6/0x10
+<4>[10244.412754] Code: 20 7c d7 ff eb c3 e8 79 70 30 01 66 0f 1f 84 00 00 00 00 00 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 0f 1f 40 d6 f3 90 <c3> cc cc cc cc 0f 1f 44 00 00 90 90 90 90 90 90 90 90 90 90 90 90
+<4>[10244.412760] RSP: 0018:ffffd565001dfe48 EFLAGS: 00000246
+<4>[10244.412763] RAX: 0000000000000201 RBX: ffffd5650bc8fcf0 RCX: 0000000000000002
+<4>[10244.412768] RDX: ffff8dee41a22030 RSI: 0000000000000286 RDI: ffffffffbdcf5ea0
+<4>[10244.412771] RBP: ffffd5650bc8fd14 R08: 0000094aec31e74b R09: 0000000000000001
+<4>[10244.412773] R10: ffffffffffffffff R11: ffffffffbda12a00 R12: ffffffffbdcf5ea0
+<4>[10244.412774] R13: 0000000000000001 R14: 0000000000000000 R15: 0000000000000001
+<4>[10244.412782]  multi_cpu_stop+0xd1/0x1c0
+<4>[10244.412788]  ? __pfx_multi_cpu_stop+0x10/0x10
+<4>[10244.412794]  cpu_stopper_thread+0x9e/0x140
+<4>[10244.412799]  ? __pfx_smpboot_thread_fn+0x10/0x10
+<4>[10244.412806]  smpboot_thread_fn+0xf3/0x220
+<4>[10244.412810]  kthread+0xe1/0x120
+<4>[10244.412816]  ? __pfx_kthread+0x10/0x10
+<4>[10244.412821]  ret_from_fork+0x2a7/0x340
+<4>[10244.412825]  ? __pfx_kthread+0x10/0x10
+<4>[10244.412828]  ret_from_fork_asm+0x1a/0x30
+<4>[10244.412833]  </TASK>
+<0>[10246.363529] Shutting down cpus with NMI
+<0>[10246.363827] Kernel Offset: 0x39e00000 from 0xffffffff81000000 (relocation range: 0xffffffff80000000-0xffffffffbfffffff)

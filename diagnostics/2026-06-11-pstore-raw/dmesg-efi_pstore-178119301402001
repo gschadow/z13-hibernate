@@ -1,0 +1,24 @@
+Panic#1 Part2
+<4>[10244.409126] NMI backtrace for cpu 12 skipped: idling at io_idle+0x3/0x30
+<6>[10244.409800] INFO: NMI handler (nmi_cpu_backtrace_handler) took too long to run: 4.837 msecs
+<4>[10244.409791] NMI backtrace for cpu 7 skipped: idling at io_idle+0x3/0x30
+<6>[10244.410450] INFO: NMI handler (nmi_cpu_backtrace_handler) took too long to run: 5.492 msecs
+<4>[10244.410441] NMI backtrace for cpu 5 skipped: idling at io_idle+0x3/0x30
+<6>[10244.411098] INFO: NMI handler (nmi_cpu_backtrace_handler) took too long to run: 6.139 msecs
+<0>[10244.412577] Kernel panic - not syncing: softlockup: hung tasks
+<4>[10244.412584] CPU: 0 UID: 0 PID: 20 Comm: migration/0 Tainted: G     U  W  OEL      7.0.9-1-cachyos-bore #1 PREEMPT(full)  bc1e4c53e2004f6d9f63dfb378a8caf9306eba7b
+<4>[10244.412595] Tainted: [U]=USER, [W]=WARN, [O]=OOT_MODULE, [E]=UNSIGNED_MODULE, [L]=SOFTLOCKUP
+<4>[10244.412599] Hardware name: ASUSTeK COMPUTER INC. ROG Flow Z13 GZ302EA_GZ302EA/GZ302EA, BIOS GZ302EA.311 08/01/2025
+<4>[10244.412603] Stopper: multi_cpu_stop+0x0/0x1c0 <- __stop_cpus.constprop.0+0x6d/0xb0
+<4>[10244.412610] Call Trace:
+<4>[10244.412616]  <IRQ>
+<4>[10244.412620]  dump_stack_lvl+0x5d/0x80
+<4>[10244.412631]  vpanic+0x20a/0x410
+<4>[10244.412643]  ? __pfx_watchdog_timer_fn+0x10/0x10
+<4>[10244.412653]  panic+0x6b/0x70
+<4>[10244.412658]  watchdog_timer_fn.cold+0x254/0x29f
+<4>[10244.412670]  ? __pfx_watchdog_timer_fn+0x10/0x10
+<4>[10244.412674]  __hrtimer_run_queues+0x158/0x470
+<4>[10244.412685]  ? sched_balance_domains+0xf6/0x320
+<4>[10244.412695]  hrtimer_interrupt+0x111/0x400
+<4>[10244.412701]  ? sched_clock+0x10/0x30

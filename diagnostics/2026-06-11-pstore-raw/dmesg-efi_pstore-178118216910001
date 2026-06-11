@@ -1,0 +1,18 @@
+Panic#1 Part10
+<6>[ 1880.950644] xhci_hcd 0000:c6:00.4: PM: pci_pm_freeze_noirq returned 0 after 10765 usecs
+<6>[ 1880.950671] pci 0000:c2:00.0: PM: pci_pm_freeze_noirq returned 0 after 10404 usecs
+<6>[ 1880.950672] ccp 0000:c4:00.2: PM: pci_pm_freeze_noirq returned 0 after 10417 usecs
+<6>[ 1880.950678] pcieport 0000:00:02.3: PM: calling pci_pm_freeze_noirq @ 11064, parent: pci0000:00
+<6>[ 1880.950682] nvme 0000:c3:00.0: PM: pci_pm_freeze_noirq returned 0 after 10795 usecs
+<6>[ 1880.950688] pcieport 0000:00:02.5: PM: calling pci_pm_freeze_noirq @ 25480, parent: pci0000:00
+<6>[ 1880.950691] xhci_hcd 0000:c6:00.0: PM: pci_pm_freeze_noirq returned 0 after 5725 usecs
+<6>[ 1880.950689] pcie_mp2_amd 0000:c4:00.7: PM: pci_pm_freeze_noirq returned 0 after 10430 usecs
+<6>[ 1880.950718] amdgpu 0000:c4:00.0: PM: pci_pm_freeze_noirq returned 0 after 362 usecs
+<6>[ 1880.950721] pcieport 0000:00:02.2: PM: pci_pm_freeze_noirq returned 0 after 417 usecs
+<6>[ 1880.950724] pcieport 0000:00:08.1: PM: calling pci_pm_freeze_noirq @ 25471, parent: pci0000:00
+<6>[ 1880.950772] thunderbolt 0000:c6:00.6: PM: pci_pm_freeze_noirq returned 0 after 197 usecs
+<6>[ 1880.950790] thunderbolt 0000:c6:00.5: PM: pci_pm_freeze_noirq returned 0 after 162 usecs
+<6>[ 1880.950789] pcieport 0000:00:08.2: PM: pci_pm_freeze_noirq returned 0 after 198 usecs
+<6>[ 1880.950798] pcieport 0000:00:08.3: PM: calling pci_pm_freeze_noirq @ 25467, parent: pci0000:00
+<6>[ 1880.950821] pcieport 0000:00:02.3: PM: pci_pm_freeze_noirq returned 0 after 137 usecs
+<6>[ 1880.950830] pcieport 0000:00:02.5: PM: pci_pm_freeze_noirq returned 0 after 139 usecs

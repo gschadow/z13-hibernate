@@ -1,0 +1,31 @@
+Panic#1 Part9
+<6>[ 1880.950835] pcieport 0000:00:08.1: PM: pci_pm_freeze_noirq returned 0 after 108 usecs
+<6>[ 1880.950849] pcieport 0000:00:08.3: PM: pci_pm_freeze_noirq returned 0 after 47 usecs
+<7>[ 1880.950855] PM: noirq freeze of devices complete after 16.626 msecs
+<7>[ 1880.950857] PM: end freeze of devices complete after 18.265 msecs
+<6>[ 1880.950904] Disabling non-boot CPUs ...
+<6>[ 1880.953392] smpboot: CPU 31 is now offline
+<6>[ 1880.956729] smpboot: CPU 30 is now offline
+<6>[ 1880.959751] smpboot: CPU 29 is now offline
+<6>[ 1880.962788] smpboot: CPU 28 is now offline
+<6>[ 1880.965554] smpboot: CPU 27 is now offline
+<6>[ 1880.968266] smpboot: CPU 26 is now offline
+<6>[ 1880.970984] smpboot: CPU 25 is now offline
+<6>[ 1880.974234] smpboot: CPU 24 is now offline
+<6>[ 1880.977190] smpboot: CPU 23 is now offline
+<6>[ 1880.979996] smpboot: CPU 22 is now offline
+<6>[ 1880.982767] smpboot: CPU 21 is now offline
+<6>[ 1880.985577] smpboot: CPU 20 is now offline
+<6>[ 1880.988100] smpboot: CPU 19 is now offline
+<6>[ 1880.990956] smpboot: CPU 18 is now offline
+<6>[ 1880.993810] smpboot: CPU 17 is now offline
+<6>[ 1880.996617] smpboot: CPU 16 is now offline
+<6>[ 1880.997734] Spectre V2 : Update user space SMT mitigation: STIBP off
+<6>[ 1880.999515] smpboot: CPU 15 is now offline
+<6>[ 1881.002125] smpboot: CPU 14 is now offline
+<6>[ 1881.004574] smpboot: CPU 13 is now offline
+<6>[ 1881.006757] smpboot: CPU 12 is now offline
+<6>[ 1881.009020] smpboot: CPU 11 is now offline
+<6>[ 1881.011236] smpboot: CPU 10 is now offline
+<6>[ 1881.013424] smpboot: CPU 9 is now offline
+<6>[ 1881.015979] smpboot: CPU 8 is now offline

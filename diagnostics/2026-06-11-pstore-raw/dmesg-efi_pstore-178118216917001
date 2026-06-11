@@ -1,0 +1,19 @@
+Panic#1 Part17
+<6>[ 1876.979517] tpm_crb MSFT0101:00: PM: calling tpm_pm_suspend @ 25329, parent: LNXSYBUS:00
+<6>[ 1876.979896] usb usb6: PM: usb_dev_freeze returned 0 after 34226 usecs
+<6>[ 1876.979902] xhci_hcd 0000:c6:00.3: PM: calling pci_pm_freeze @ 25474, parent: 0000:00:08.3
+<6>[ 1876.979906] usb usb8: PM: usb_dev_freeze returned 0 after 34496 usecs
+<6>[ 1876.979912] xhci_hcd 0000:c6:00.4: PM: calling pci_pm_freeze @ 25472, parent: 0000:00:08.3
+<6>[ 1876.980031] xhci_hcd 0000:c6:00.3: PM: pci_pm_freeze returned 0 after 124 usecs
+<6>[ 1876.980032] xhci_hcd 0000:c6:00.4: PM: pci_pm_freeze returned 0 after 118 usecs
+<6>[ 1876.980227] i2c_designware AMDI0010:02: PM: acpi_subsys_freeze returned 0 after 1374 usecs
+<6>[ 1876.981205] i2c_hid_acpi i2c-ELAN9008:00: PM: acpi_subsys_freeze returned 0 after 1693 usecs
+<6>[ 1876.981243] i2c_designware AMDI0010:00: PM: calling acpi_subsys_freeze @ 2971, parent: platform
+<6>[ 1876.981250] i2c_designware AMDI0010:00: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.983894] usb usb2: PM: usb_dev_freeze returned 0 after 36802 usecs
+<6>[ 1876.987119] usb 3-4: PM: usb_dev_freeze returned 0 after 8102 usecs
+<6>[ 1876.987456] xhci_hcd 0000:c4:00.4: PM: calling pci_pm_freeze @ 25480, parent: 0000:00:08.1
+<6>[ 1877.008192] pcieport 0000:00:01.1: PM: pci_pm_freeze returned 0 after 29416 usecs
+<6>[ 1877.008308] xhci_hcd 0000:c4:00.4: PM: pci_pm_freeze returned 0 after 86 usecs
+<6>[ 1877.008510] thunderbolt 0000:c6:00.5: PM: calling pci_pm_freeze @ 993, parent: 0000:00:08.3
+<6>[ 1877.009205] pcieport 0000:00:01.2: PM: pci_pm_freeze returned 0 after 29003 usecs

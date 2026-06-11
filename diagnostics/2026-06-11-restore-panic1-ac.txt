@@ -1,0 +1,466 @@
+<6>[ 1876.979139] port serial8250:0.4: PM: calling pm_runtime_force_suspend @ 25329, parent: serial8250:0
+<6>[ 1876.979140] port serial8250:0.4: PM: pm_runtime_force_suspend returned 0 after 0 usecs
+<6>[ 1876.979142] port serial8250:0.3: PM: calling pm_runtime_force_suspend @ 25329, parent: serial8250:0
+<6>[ 1876.979143] port serial8250:0.3: PM: pm_runtime_force_suspend returned 0 after 0 usecs
+<6>[ 1876.979145] port serial8250:0.2: PM: calling pm_runtime_force_suspend @ 25329, parent: serial8250:0
+<6>[ 1876.979146] port serial8250:0.2: PM: pm_runtime_force_suspend returned 0 after 0 usecs
+<6>[ 1876.979147] port serial8250:0.1: PM: calling pm_runtime_force_suspend @ 25329, parent: serial8250:0
+<6>[ 1876.979148] port serial8250:0.1: PM: pm_runtime_force_suspend returned 0 after 0 usecs
+<6>[ 1876.979150] port serial8250:0.0: PM: calling pm_runtime_force_suspend @ 25329, parent: serial8250:0
+<6>[ 1876.979151] port serial8250:0.0: PM: pm_runtime_force_suspend returned 0 after 0 usecs
+<6>[ 1876.979157] serial8250 serial8250: PM: calling platform_pm_freeze @ 25329, parent: platform
+<6>[ 1876.979159] serial8250 serial8250: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979174] input input1: PM: calling input_dev_freeze @ 25329, parent: PNP0C0C:00
+<6>[ 1876.979175] input input1: PM: input_dev_freeze returned 0 after 0 usecs
+<6>[ 1876.979177] input input0: PM: calling input_dev_freeze @ 25329, parent: PNP0C0D:00
+<6>[ 1876.979179] input input0: PM: input_dev_freeze returned 0 after 0 usecs
+<6>[ 1876.979200] pcspkr pcspkr: PM: calling platform_pm_freeze @ 25329, parent: platform
+<6>[ 1876.979201] pcspkr pcspkr: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979240] pci 0000:00:00.2: PM: calling pci_pm_freeze @ 2971, parent: pci0000:00
+<6>[ 1876.979245] i8042 kbd 00:01: PM: calling pnp_bus_freeze @ 25329, parent: pnp0
+<6>[ 1876.979249] i8042 kbd 00:01: PM: pnp_bus_freeze returned 0 after 0 usecs
+<6>[ 1876.979251] rtc_cmos 00:00: PM: calling pnp_bus_freeze @ 25329, parent: pnp0
+<6>[ 1876.979262] pci 0000:00:00.2: PM: pci_pm_freeze returned 0 after 12 usecs
+<6>[ 1876.979284] rtc_cmos 00:00: PM: pnp_bus_freeze returned 0 after 31 usecs
+<6>[ 1876.979287] platform efivars.0: PM: calling platform_pm_freeze @ 25329, parent: platform
+<6>[ 1876.979288] platform efivars.0: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979289] platform rtc-efi.0: PM: calling platform_pm_freeze @ 25329, parent: platform
+<6>[ 1876.979290] platform rtc-efi.0: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979295] platform AMDI0080:00: PM: calling platform_pm_freeze @ 25329, parent: platform
+<6>[ 1876.979296] platform AMDI0080:00: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979298] acpi-wmi PNP0C14:02: PM: calling acpi_subsys_freeze @ 25329, parent: platform
+<6>[ 1876.979300] acpi-wmi PNP0C14:02: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979301] acpi-thermal LNXTHERM:02: PM: calling acpi_subsys_freeze @ 25329, parent: platform
+<6>[ 1876.979302] acpi-thermal LNXTHERM:02: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979304] acpi-thermal LNXTHERM:01: PM: calling acpi_subsys_freeze @ 25329, parent: platform
+<6>[ 1876.979305] acpi-thermal LNXTHERM:01: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979306] acpi-thermal LNXTHERM:00: PM: calling acpi_subsys_freeze @ 25329, parent: platform
+<6>[ 1876.979307] acpi-thermal LNXTHERM:00: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979309] amd_pmc AMDI000B:00: PM: calling acpi_subsys_freeze @ 25329, parent: platform
+<6>[ 1876.979310] amd_pmc AMDI000B:00: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979314] ucsi_acpi USBC000:00: PM: calling acpi_subsys_freeze @ 25329, parent: platform
+<6>[ 1876.979315] ucsi_acpi USBC000:00: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979318] platform OMNI13B1:00: PM: calling platform_pm_freeze @ 25329, parent: platform
+<6>[ 1876.979320] platform OMNI13B1:00: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979322] platform DRTM0001:00: PM: calling platform_pm_freeze @ 25329, parent: platform
+<6>[ 1876.979325] platform DRTM0001:00: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979327] platform MSFT0201:00: PM: calling platform_pm_freeze @ 25329, parent: platform
+<6>[ 1876.979329] platform MSFT0201:00: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979332] amd-pmf AMDI0105:00: PM: calling acpi_subsys_freeze @ 25329, parent: platform
+<6>[ 1876.979336] amd-pmf AMDI0105:00: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979338] platform acpi-cpufreq: PM: calling platform_pm_freeze @ 25329, parent: platform
+<6>[ 1876.979340] platform acpi-cpufreq: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979344] acpi-wmi PNP0C14:01: PM: calling acpi_subsys_freeze @ 25329, parent: platform
+<6>[ 1876.979346] acpi-wmi PNP0C14:01: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979348] platform ASUS9001:00: PM: calling platform_pm_freeze @ 25329, parent: platform
+<6>[ 1876.979350] platform ASUS9001:00: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979353] platform ASUS2018:00: PM: calling platform_pm_freeze @ 25329, parent: platform
+<6>[ 1876.979355] platform ASUS2018:00: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979358] acpi-fan PNP0C0B:00: PM: calling platform_pm_freeze @ 25329, parent: platform
+<6>[ 1876.979361] acpi-fan PNP0C0B:00: PM: platform_pm_freeze returned 0 after 1 usecs
+<6>[ 1876.979363] acpi-wmi PNP0C14:00: PM: calling acpi_subsys_freeze @ 25329, parent: platform
+<6>[ 1876.979365] acpi-wmi PNP0C14:00: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979368] platform INT33D3:00: PM: calling platform_pm_freeze @ 25329, parent: platform
+<6>[ 1876.979370] platform INT33D3:00: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979373] platform MSFT0101:00: PM: calling platform_pm_freeze @ 25329, parent: platform
+<6>[ 1876.979375] platform MSFT0101:00: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979378] Serial bus multi instantiate pseudo device driver CSC3551:00: PM: calling acpi_subsys_freeze @ 25329, parent: AMDI0010:01
+<6>[ 1876.979381] Serial bus multi instantiate pseudo device driver CSC3551:00: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979385] platform AMDI0052:00: PM: calling platform_pm_freeze @ 25329, parent: platform
+<6>[ 1876.979387] platform AMDI0052:00: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979389] amd_gpio AMDI0030:00: PM: calling acpi_subsys_freeze @ 25329, parent: platform
+<6>[ 1876.979392] amd_gpio AMDI0030:00: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979394] i2c_designware AMDI0010:01: PM: calling acpi_subsys_freeze @ 2972, parent: platform
+<6>[ 1876.979395] soc_button_array ACPI0011:00: PM: calling acpi_subsys_freeze @ 25329, parent: platform
+<6>[ 1876.979396] i2c_designware AMDI0010:01: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979397] soc_button_array ACPI0011:00: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979401] acpi-button PNP0C0C:00: PM: calling acpi_subsys_freeze @ 25329, parent: platform
+<6>[ 1876.979404] acpi-button PNP0C0C:00: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979406] platform PNP0103:00: PM: calling platform_pm_freeze @ 25329, parent: pci0000:00
+<6>[ 1876.979408] platform PNP0103:00: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979412] video acpi.video_bus.0: PM: calling pm_generic_suspend @ 25329, parent: 0000:00:08.1
+<6>[ 1876.979417] video acpi.video_bus.0: PM: pm_generic_suspend returned 0 after 0 usecs
+<6>[ 1876.979421] acpi-battery PNP0C0A:00: PM: calling acpi_subsys_freeze @ 25329, parent: PNP0C09:00
+<6>[ 1876.979424] acpi-battery PNP0C0A:00: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979427] acpi-button PNP0C0D:00: PM: calling acpi_subsys_freeze @ 25329, parent: PNP0C09:00
+<6>[ 1876.979429] acpi-button PNP0C0D:00: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979432] ac ACPI0003:00: PM: calling acpi_subsys_freeze @ 25329, parent: PNP0C09:00
+<6>[ 1876.979434] ac ACPI0003:00: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979438] acpi-ec PNP0C09:00: PM: calling acpi_subsys_freeze @ 25329, parent: 0000:00:14.3
+<6>[ 1876.979440] acpi-ec PNP0C09:00: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979444] platform PNP0800:00: PM: calling platform_pm_freeze @ 25329, parent: 0000:00:14.3
+<6>[ 1876.979446] platform PNP0800:00: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979448] platform PNP0C04:00: PM: calling platform_pm_freeze @ 25329, parent: 0000:00:14.3
+<6>[ 1876.979450] platform PNP0C04:00: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979453] pci 0000:00:14.3: PM: calling pci_pm_freeze @ 2972, parent: pci0000:00
+<6>[ 1876.979455] pci 0000:00:14.3: PM: pci_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979465] pcie_mp2_amd 0000:c4:00.7: PM: calling pci_pm_freeze @ 2972, parent: 0000:00:08.1
+<6>[ 1876.979468] pcie_mp2_amd 0000:c4:00.7: PM: pci_pm_freeze returned 0 after 1 usecs
+<6>[ 1876.979469] ccp 0000:c4:00.2: PM: calling pci_pm_freeze @ 2972, parent: 0000:00:08.1
+<6>[ 1876.979472] ccp 0000:c4:00.2: PM: pci_pm_freeze returned 0 after 1 usecs
+<6>[ 1876.979474] pci 0000:c2:00.0: PM: calling pci_pm_freeze @ 2972, parent: 0000:00:02.3
+<6>[ 1876.979475] pci 0000:c2:00.0: PM: pci_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979483] pcieport 0000:00:02.3: PM: calling pci_pm_freeze @ 25483, parent: pci0000:00
+<6>[ 1876.979486] pcieport 0000:00:02.2: PM: calling pci_pm_freeze @ 25484, parent: pci0000:00
+<6>[ 1876.979501] pcieport 0000:00:02.3: PM: pci_pm_freeze returned 0 after 12 usecs
+<6>[ 1876.979509] pcieport 0000:00:02.2: PM: pci_pm_freeze returned 0 after 14 usecs
+<6>[ 1876.979517] tpm_crb MSFT0101:00: PM: calling tpm_pm_suspend @ 25329, parent: LNXSYBUS:00
+<6>[ 1876.979896] usb usb6: PM: usb_dev_freeze returned 0 after 34226 usecs
+<6>[ 1876.979902] xhci_hcd 0000:c6:00.3: PM: calling pci_pm_freeze @ 25474, parent: 0000:00:08.3
+<6>[ 1876.979906] usb usb8: PM: usb_dev_freeze returned 0 after 34496 usecs
+<6>[ 1876.979912] xhci_hcd 0000:c6:00.4: PM: calling pci_pm_freeze @ 25472, parent: 0000:00:08.3
+<6>[ 1876.980031] xhci_hcd 0000:c6:00.3: PM: pci_pm_freeze returned 0 after 124 usecs
+<6>[ 1876.980032] xhci_hcd 0000:c6:00.4: PM: pci_pm_freeze returned 0 after 118 usecs
+<6>[ 1876.980227] i2c_designware AMDI0010:02: PM: acpi_subsys_freeze returned 0 after 1374 usecs
+<6>[ 1876.981205] i2c_hid_acpi i2c-ELAN9008:00: PM: acpi_subsys_freeze returned 0 after 1693 usecs
+<6>[ 1876.981243] i2c_designware AMDI0010:00: PM: calling acpi_subsys_freeze @ 2971, parent: platform
+<6>[ 1876.981250] i2c_designware AMDI0010:00: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.983894] usb usb2: PM: usb_dev_freeze returned 0 after 36802 usecs
+<6>[ 1876.987119] usb 3-4: PM: usb_dev_freeze returned 0 after 8102 usecs
+<6>[ 1876.987456] xhci_hcd 0000:c4:00.4: PM: calling pci_pm_freeze @ 25480, parent: 0000:00:08.1
+<6>[ 1877.008192] pcieport 0000:00:01.1: PM: pci_pm_freeze returned 0 after 29416 usecs
+<6>[ 1877.008308] xhci_hcd 0000:c4:00.4: PM: pci_pm_freeze returned 0 after 86 usecs
+<6>[ 1877.008510] thunderbolt 0000:c6:00.5: PM: calling pci_pm_freeze @ 993, parent: 0000:00:08.3
+<6>[ 1877.009205] pcieport 0000:00:01.2: PM: pci_pm_freeze returned 0 after 29003 usecs
+<6>[ 1877.009212] thunderbolt 0000:c6:00.6: PM: calling pci_pm_freeze @ 1019, parent: 0000:00:08.3
+<6>[ 1877.009215] thunderbolt 0000:c6:00.6: PM: pci_pm_freeze returned 0 after 0 usecs
+<6>[ 1877.054922] usb 3-3: PM: usb_dev_freeze returned 0 after 93837 usecs
+<6>[ 1877.055085] thunderbolt 0000:c6:00.5: PM: pci_pm_freeze returned 0 after 0 usecs
+<6>[ 1877.055826] usb usb3: PM: calling usb_dev_freeze @ 25471, parent: 0000:c6:00.0
+<6>[ 1877.057074] tpm_crb MSFT0101:00: PM: tpm_pm_suspend returned 0 after 77546 usecs
+<6>[ 1877.067726] usb usb3: PM: usb_dev_freeze returned 0 after 10217 usecs
+<6>[ 1877.067754] xhci_hcd 0000:c6:00.0: PM: calling pci_pm_freeze @ 25475, parent: 0000:00:08.3
+<6>[ 1877.067964] xhci_hcd 0000:c6:00.0: PM: pci_pm_freeze returned 0 after 197 usecs
+<6>[ 1877.067994] pcieport 0000:00:08.3: PM: calling pci_pm_freeze @ 25476, parent: pci0000:00
+<6>[ 1877.068015] pcieport 0000:00:08.3: PM: pci_pm_freeze returned 0 after 12 usecs
+<6>[ 1877.097982] nvme 0000:c3:00.0: PM: pci_pm_freeze returned 0 after 118949 usecs
+<6>[ 1877.098029] pcieport 0000:00:02.5: PM: calling pci_pm_freeze @ 25478, parent: pci0000:00
+<6>[ 1877.098043] pcieport 0000:00:02.5: PM: pci_pm_freeze returned 0 after 5 usecs
+<6>[ 1877.196774] amdxdna 0000:c5:00.1: PM: pci_pm_freeze returned 0 after 234226 usecs
+<6>[ 1877.196823] pcieport 0000:00:08.2: PM: calling pci_pm_freeze @ 25477, parent: pci0000:00
+<6>[ 1877.196872] pcieport 0000:00:08.2: PM: pci_pm_freeze returned 0 after 27 usecs
+<6>[ 1880.932198] amdgpu 0000:c4:00.0: PM: pci_pm_freeze returned 0 after 3952949 usecs
+<6>[ 1880.932479] pcieport 0000:00:08.1: PM: calling pci_pm_freeze @ 25482, parent: pci0000:00
+<6>[ 1880.932536] pcieport 0000:00:08.1: PM: pci_pm_freeze returned 0 after 29 usecs
+<7>[ 1880.932581] PM: freeze of devices complete after 3987.940 msecs
+<6>[ 1880.933445] i2c_designware AMDI0010:03: PM: calling i2c_dw_suspend @ 25485, parent: platform
+<6>[ 1880.933466] i2c_designware AMDI0010:00: PM: calling i2c_dw_suspend @ 12648, parent: platform
+<6>[ 1880.933477] i2c_designware AMDI0010:03: PM: i2c_dw_suspend returned 0 after 26 usecs
+<6>[ 1880.933491] i2c_designware AMDI0010:00: PM: i2c_dw_suspend returned 0 after 10 usecs
+<6>[ 1880.933503] i2c_designware AMDI0010:02: PM: calling i2c_dw_suspend @ 25391, parent: platform
+<6>[ 1880.933535] i2c_designware AMDI0010:02: PM: i2c_dw_suspend returned 0 after 18 usecs
+<6>[ 1880.933765] i2c_designware AMDI0010:01: PM: calling i2c_dw_suspend @ 25492, parent: platform
+<6>[ 1880.933765] amd_gpio AMDI0030:00: PM: calling amd_gpio_hibernate @ 25329, parent: platform
+<7>[ 1880.933788] Disabling GPIO #0 interrupt for hibernate.
+<7>[ 1880.933792] Disabling GPIO #2 interrupt for hibernate.
+<6>[ 1880.933795] i2c_designware AMDI0010:01: PM: i2c_dw_suspend returned 0 after 24 usecs
+<7>[ 1880.933799] Disabling GPIO #3 interrupt for hibernate.
+<7>[ 1880.933801] Disabling GPIO #4 interrupt for hibernate.
+<7>[ 1880.933805] Clearing debounce for GPIO #4 during hibernate.
+<7>[ 1880.933808] Disabling GPIO #8 interrupt for hibernate.
+<7>[ 1880.933811] Disabling GPIO #9 interrupt for hibernate.
+<7>[ 1880.933817] Disabling GPIO #58 interrupt for hibernate.
+<7>[ 1880.933820] Disabling GPIO #59 interrupt for hibernate.
+<6>[ 1880.933830] amd_gpio AMDI0030:00: PM: amd_gpio_hibernate returned 0 after 45 usecs
+<7>[ 1880.934075] PM: late freeze of devices complete after 1.483 msecs
+<7>[ 1880.934084] Setting wake for GPIO 8 to enable
+<7>[ 1880.934102] Setting wake for GPIO 9 to enable
+<6>[ 1880.934613] pci 0000:00:18.7: PM: calling pci_pm_freeze_noirq @ 12648, parent: pci0000:00
+<6>[ 1880.934613] pci 0000:00:18.5: PM: calling pci_pm_freeze_noirq @ 25485, parent: pci0000:00
+<6>[ 1880.934613] pci 0000:00:18.6: PM: calling pci_pm_freeze_noirq @ 25472, parent: pci0000:00
+<6>[ 1880.934613] pci 0000:c5:00.0: PM: calling pci_pm_freeze_noirq @ 2967, parent: 0000:00:08.2
+<6>[ 1880.934617] pci 0000:00:03.0: PM: calling pci_pm_freeze_noirq @ 11055, parent: pci0000:00
+<6>[ 1880.934615] pci 0000:00:18.0: PM: calling pci_pm_freeze_noirq @ 2962, parent: pci0000:00
+<6>[ 1880.934614] pci 0000:00:18.4: PM: calling pci_pm_freeze_noirq @ 25470, parent: pci0000:00
+<6>[ 1880.934617] pci 0000:00:18.2: PM: calling pci_pm_freeze_noirq @ 25386, parent: pci0000:00
+<6>[ 1880.934617] pci 0000:00:18.1: PM: calling pci_pm_freeze_noirq @ 25483, parent: pci0000:00
+<6>[ 1880.934619] pci 0000:00:00.0: PM: calling pci_pm_freeze_noirq @ 25474, parent: pci0000:00
+<6>[ 1880.934618] pci 0000:00:08.0: PM: calling pci_pm_freeze_noirq @ 14853, parent: pci0000:00
+<6>[ 1880.934620] pci 0000:00:02.0: PM: calling pci_pm_freeze_noirq @ 25477, parent: pci0000:00
+<6>[ 1880.934620] pci 0000:00:01.0: PM: calling pci_pm_freeze_noirq @ 25466, parent: pci0000:00
+<6>[ 1880.934624] sdhci-pci 0000:c1:00.0: PM: calling pci_pm_freeze_noirq @ 25473, parent: 0000:00:02.2
+<6>[ 1880.939461] snd_hda_intel 0000:c4:00.6: PM: calling pci_pm_freeze_noirq @ 25476, parent: 0000:00:08.1
+<6>[ 1880.939467] snd_hda_intel 0000:c4:00.1: PM: calling pci_pm_freeze_noirq @ 2963, parent: 0000:00:08.1
+<6>[ 1880.939646] pci 0000:00:18.7: PM: pci_pm_freeze_noirq returned 0 after 5029 usecs
+<6>[ 1880.939647] pci 0000:00:18.5: PM: pci_pm_freeze_noirq returned 0 after 5030 usecs
+<6>[ 1880.939651] pcieport 0000:00:01.2: PM: calling pci_pm_freeze_noirq @ 12648, parent: pci0000:00
+<6>[ 1880.939685] snd_acp_pci 0000:c4:00.5: PM: calling pci_pm_freeze_noirq @ 25479, parent: 0000:00:08.1
+<6>[ 1880.939728] pci 0000:00:03.0: PM: pci_pm_freeze_noirq returned 0 after 5109 usecs
+<6>[ 1880.939729] pci 0000:00:18.4: PM: pci_pm_freeze_noirq returned 0 after 5106 usecs
+<6>[ 1880.939732] amdxdna 0000:c5:00.1: PM: calling pci_pm_freeze_noirq @ 11055, parent: 0000:00:08.2
+<6>[ 1880.939742] pcieport 0000:00:01.1: PM: calling pci_pm_freeze_noirq @ 25484, parent: pci0000:00
+<6>[ 1880.939763] pci 0000:00:18.0: PM: pci_pm_freeze_noirq returned 0 after 5134 usecs
+<6>[ 1880.939763] pci 0000:00:18.2: PM: pci_pm_freeze_noirq returned 0 after 5135 usecs
+<6>[ 1880.939764] pci 0000:00:18.6: PM: pci_pm_freeze_noirq returned 0 after 5143 usecs
+<6>[ 1880.939766] k10temp 0000:00:18.3: PM: calling pci_pm_freeze_noirq @ 25386, parent: pci0000:00
+<6>[ 1880.939774] pci 0000:00:18.1: PM: pci_pm_freeze_noirq returned 0 after 5146 usecs
+<6>[ 1880.939807] pci 0000:00:01.0: PM: pci_pm_freeze_noirq returned 0 after 5176 usecs
+<6>[ 1880.939809] pci 0000:00:02.0: PM: pci_pm_freeze_noirq returned 0 after 5178 usecs
+<6>[ 1880.939810] pci 0000:00:00.0: PM: pci_pm_freeze_noirq returned 0 after 5150 usecs
+<6>[ 1880.939814] xhci_hcd 0000:c6:00.3: PM: calling pci_pm_freeze_noirq @ 25474, parent: 0000:00:08.3
+<6>[ 1880.939831] xhci_hcd 0000:c4:00.4: PM: calling pci_pm_freeze_noirq @ 25469, parent: 0000:00:08.1
+<6>[ 1880.939838] acpi-ec PNP0C09:00: PM: calling acpi_ec_suspend_noirq @ 25329, parent: 0000:00:14.3
+<6>[ 1880.939843] ACPI: EC: interrupt blocked
+<6>[ 1880.939844] acpi-ec PNP0C09:00: PM: acpi_ec_suspend_noirq returned 0 after 1 usecs
+<6>[ 1880.939864] pci 0000:00:08.0: PM: pci_pm_freeze_noirq returned 0 after 5234 usecs
+<6>[ 1880.939867] piix4_smbus 0000:00:14.0: PM: calling pci_pm_freeze_noirq @ 25486, parent: pci0000:00
+<6>[ 1880.939876] xhci_hcd 0000:c6:00.4: PM: calling pci_pm_freeze_noirq @ 25477, parent: 0000:00:08.3
+<6>[ 1880.939882] nvme 0000:c3:00.0: PM: calling pci_pm_freeze_noirq @ 220, parent: 0000:00:02.5
+<6>[ 1880.939883] pci 0000:00:00.2: PM: calling pci_pm_freeze_noirq @ 25478, parent: pci0000:00
+<6>[ 1880.939900] pci 0000:00:14.3: PM: calling pci_pm_freeze_noirq @ 2962, parent: pci0000:00
+<6>[ 1880.940226] pcie_mp2_amd 0000:c4:00.7: PM: calling pci_pm_freeze_noirq @ 25481, parent: 0000:00:08.1
+<6>[ 1880.940244] ccp 0000:c4:00.2: PM: calling pci_pm_freeze_noirq @ 1620, parent: 0000:00:08.1
+<6>[ 1880.940250] pci 0000:c2:00.0: PM: calling pci_pm_freeze_noirq @ 25465, parent: 0000:00:02.3
+<6>[ 1880.944961] xhci_hcd 0000:c6:00.0: PM: calling pci_pm_freeze_noirq @ 222, parent: 0000:00:08.3
+<6>[ 1880.950293] sdhci-pci 0000:c1:00.0: PM: pci_pm_freeze_noirq returned 0 after 15662 usecs
+<6>[ 1880.950302] pcieport 0000:00:02.2: PM: calling pci_pm_freeze_noirq @ 212, parent: pci0000:00
+<6>[ 1880.950335] pci 0000:c5:00.0: PM: pci_pm_freeze_noirq returned 0 after 15710 usecs
+<6>[ 1880.950346] snd_hda_intel 0000:c4:00.6: PM: pci_pm_freeze_noirq returned 0 after 10880 usecs
+<6>[ 1880.950347] snd_hda_intel 0000:c4:00.1: PM: pci_pm_freeze_noirq returned 0 after 10873 usecs
+<6>[ 1880.950353] amdgpu 0000:c4:00.0: PM: calling pci_pm_freeze_noirq @ 25483, parent: 0000:00:08.1
+<6>[ 1880.950416] k10temp 0000:00:18.3: PM: pci_pm_freeze_noirq returned 0 after 10645 usecs
+<6>[ 1880.950498] piix4_smbus 0000:00:14.0: PM: pci_pm_freeze_noirq returned 0 after 10626 usecs
+<6>[ 1880.950521] pci 0000:00:14.3: PM: pci_pm_freeze_noirq returned 0 after 10617 usecs
+<6>[ 1880.950534] snd_acp_pci 0000:c4:00.5: PM: pci_pm_freeze_noirq returned 0 after 10846 usecs
+<6>[ 1880.950567] pcieport 0000:00:01.2: PM: pci_pm_freeze_noirq returned 0 after 10913 usecs
+<6>[ 1880.950571] amdxdna 0000:c5:00.1: PM: pci_pm_freeze_noirq returned 0 after 10836 usecs
+<6>[ 1880.950572] thunderbolt 0000:c6:00.6: PM: calling pci_pm_freeze_noirq @ 25470, parent: 0000:00:08.3
+<6>[ 1880.950575] pci 0000:00:00.2: PM: pci_pm_freeze_noirq returned 0 after 10687 usecs
+<6>[ 1880.950586] pcieport 0000:00:08.2: PM: calling pci_pm_freeze_noirq @ 25485, parent: pci0000:00
+<6>[ 1880.950609] xhci_hcd 0000:c6:00.3: PM: pci_pm_freeze_noirq returned 0 after 10792 usecs
+<6>[ 1880.950619] pcieport 0000:00:01.1: PM: pci_pm_freeze_noirq returned 0 after 10872 usecs
+<6>[ 1880.950624] thunderbolt 0000:c6:00.5: PM: calling pci_pm_freeze_noirq @ 10879, parent: 0000:00:08.3
+<6>[ 1880.950632] xhci_hcd 0000:c4:00.4: PM: pci_pm_freeze_noirq returned 0 after 10797 usecs
+<6>[ 1880.950644] xhci_hcd 0000:c6:00.4: PM: pci_pm_freeze_noirq returned 0 after 10765 usecs
+<6>[ 1880.950671] pci 0000:c2:00.0: PM: pci_pm_freeze_noirq returned 0 after 10404 usecs
+<6>[ 1880.950672] ccp 0000:c4:00.2: PM: pci_pm_freeze_noirq returned 0 after 10417 usecs
+<6>[ 1880.950678] pcieport 0000:00:02.3: PM: calling pci_pm_freeze_noirq @ 11064, parent: pci0000:00
+<6>[ 1880.950682] nvme 0000:c3:00.0: PM: pci_pm_freeze_noirq returned 0 after 10795 usecs
+<6>[ 1880.950688] pcieport 0000:00:02.5: PM: calling pci_pm_freeze_noirq @ 25480, parent: pci0000:00
+<6>[ 1880.950691] xhci_hcd 0000:c6:00.0: PM: pci_pm_freeze_noirq returned 0 after 5725 usecs
+<6>[ 1880.950689] pcie_mp2_amd 0000:c4:00.7: PM: pci_pm_freeze_noirq returned 0 after 10430 usecs
+<6>[ 1880.950718] amdgpu 0000:c4:00.0: PM: pci_pm_freeze_noirq returned 0 after 362 usecs
+<6>[ 1880.950721] pcieport 0000:00:02.2: PM: pci_pm_freeze_noirq returned 0 after 417 usecs
+<6>[ 1880.950724] pcieport 0000:00:08.1: PM: calling pci_pm_freeze_noirq @ 25471, parent: pci0000:00
+<6>[ 1880.950772] thunderbolt 0000:c6:00.6: PM: pci_pm_freeze_noirq returned 0 after 197 usecs
+<6>[ 1880.950790] thunderbolt 0000:c6:00.5: PM: pci_pm_freeze_noirq returned 0 after 162 usecs
+<6>[ 1880.950789] pcieport 0000:00:08.2: PM: pci_pm_freeze_noirq returned 0 after 198 usecs
+<6>[ 1880.950798] pcieport 0000:00:08.3: PM: calling pci_pm_freeze_noirq @ 25467, parent: pci0000:00
+<6>[ 1880.950821] pcieport 0000:00:02.3: PM: pci_pm_freeze_noirq returned 0 after 137 usecs
+<6>[ 1880.950830] pcieport 0000:00:02.5: PM: pci_pm_freeze_noirq returned 0 after 139 usecs
+<6>[ 1880.950835] pcieport 0000:00:08.1: PM: pci_pm_freeze_noirq returned 0 after 108 usecs
+<6>[ 1880.950849] pcieport 0000:00:08.3: PM: pci_pm_freeze_noirq returned 0 after 47 usecs
+<7>[ 1880.950855] PM: noirq freeze of devices complete after 16.626 msecs
+<7>[ 1880.950857] PM: end freeze of devices complete after 18.265 msecs
+<6>[ 1880.950904] Disabling non-boot CPUs ...
+<6>[ 1880.953392] smpboot: CPU 31 is now offline
+<6>[ 1880.956729] smpboot: CPU 30 is now offline
+<6>[ 1880.959751] smpboot: CPU 29 is now offline
+<6>[ 1880.962788] smpboot: CPU 28 is now offline
+<6>[ 1880.965554] smpboot: CPU 27 is now offline
+<6>[ 1880.968266] smpboot: CPU 26 is now offline
+<6>[ 1880.970984] smpboot: CPU 25 is now offline
+<6>[ 1880.974234] smpboot: CPU 24 is now offline
+<6>[ 1880.977190] smpboot: CPU 23 is now offline
+<6>[ 1880.979996] smpboot: CPU 22 is now offline
+<6>[ 1880.982767] smpboot: CPU 21 is now offline
+<6>[ 1880.985577] smpboot: CPU 20 is now offline
+<6>[ 1880.988100] smpboot: CPU 19 is now offline
+<6>[ 1880.990956] smpboot: CPU 18 is now offline
+<6>[ 1880.993810] smpboot: CPU 17 is now offline
+<6>[ 1880.996617] smpboot: CPU 16 is now offline
+<6>[ 1880.997734] Spectre V2 : Update user space SMT mitigation: STIBP off
+<6>[ 1880.999515] smpboot: CPU 15 is now offline
+<6>[ 1881.002125] smpboot: CPU 14 is now offline
+<6>[ 1881.004574] smpboot: CPU 13 is now offline
+<6>[ 1881.006757] smpboot: CPU 12 is now offline
+<6>[ 1881.009020] smpboot: CPU 11 is now offline
+<6>[ 1881.011236] smpboot: CPU 10 is now offline
+<6>[ 1881.013424] smpboot: CPU 9 is now offline
+<6>[ 1881.015979] smpboot: CPU 8 is now offline
+<6>[ 1881.018172] smpboot: CPU 7 is now offline
+<6>[ 1881.020630] smpboot: CPU 6 is now offline
+<6>[ 1881.023242] smpboot: CPU 5 is now offline
+<6>[ 1881.025613] smpboot: CPU 4 is now offline
+<6>[ 1881.027966] smpboot: CPU 3 is now offline
+<6>[ 1881.030389] smpboot: CPU 2 is now offline
+<6>[ 1881.033007] smpboot: CPU 1 is now offline
+<7>[ 1881.034131] Checking wakeup interrupts
+<7>[ 1881.034132] Calling mce_syscore_suspend+0x0/0x20
+<7>[ 1881.034140] Calling ledtrig_cpu_syscore_suspend+0x0/0x20
+<7>[ 1881.034145] Calling timekeeping_syscore_suspend+0x0/0x10
+<7>[ 1881.034187] Calling irq_gc_suspend+0x0/0x110
+<7>[ 1881.034190] Calling ioapic_suspend+0x0/0x10
+<7>[ 1881.034296] Calling i8259A_suspend+0x0/0x30
+<7>[ 1881.034301] Calling perf_ibs_suspend+0x0/0x40
+<7>[ 1881.034304] Calling amd_iommu_suspend+0x0/0x120
+<7>[ 1881.034309] Calling fw_suspend+0x0/0x20
+<7>[ 1881.034457] Calling acpi_save_bm_rld+0x0/0x30
+<7>[ 1881.034469] Calling lapic_suspend+0x0/0x1c0
+<7>[ 1881.034651] PM: hibernation: Creating image
+<7>[ 1881.610621] PM: hibernation: Need to copy 3670630 pages
+<7>[ 1881.610626] PM: hibernation: Normal pages needed: 3670630 + 1024, available pages: 28739321
+<7>[ 1881.035371] Calling lapic_resume+0x0/0x2e0
+<6>[ 1881.035688] AMD-Vi: Virtual APIC enabled
+<7>[ 1881.035725] Calling acpi_restore_bm_rld+0x0/0x70
+<7>[ 1881.035766] Calling irqrouter_resume+0x0/0x90
+<7>[ 1881.035770] Calling amd_iommu_resume+0x0/0x260
+<6>[ 1881.035993] AMD-Vi: Virtual APIC enabled
+<7>[ 1881.036027] Calling perf_ibs_resume+0x0/0x50
+<6>[ 1881.036053] LVT offset 0 assigned for vector 0x400
+<7>[ 1881.036055] Calling i8259A_resume+0x0/0x40
+<7>[ 1881.036209] Calling ioapic_resume+0x0/0x160
+<7>[ 1881.036312] Calling irq_gc_resume+0x0/0xf0
+<7>[ 1881.036318] Calling irq_pm_syscore_resume+0x0/0x20
+<7>[ 1881.036362] Calling timekeeping_syscore_resume+0x0/0x10
+<7>[ 1881.036412] Timekeeping suspended for 8587.369 seconds
+<7>[ 1881.036431] Calling ledtrig_cpu_syscore_resume+0x0/0x20
+<7>[ 1881.036435] Calling init_counter_refs+0x0/0x40
+<7>[ 1881.036438] Calling mce_syscore_resume+0x0/0x130
+<7>[ 1881.036714] Calling microcode_bsp_syscore_resume+0x0/0xf0
+<6>[ 1881.037167] Enabling non-boot CPUs ...
+<6>[ 1881.037251] smpboot: Booting Node 0 Processor 1 APIC 0x2
+<6>[ 1881.039168] CPU1 is up
+<6>[ 1881.039197] smpboot: Booting Node 0 Processor 2 APIC 0x4
+<6>[ 1881.041005] CPU2 is up
+<6>[ 1881.041022] smpboot: Booting Node 0 Processor 3 APIC 0x6
+<6>[ 1881.042613] CPU3 is up
+<6>[ 1881.042626] smpboot: Booting Node 0 Processor 4 APIC 0x8
+<6>[ 1881.044133] CPU4 is up
+<6>[ 1881.044146] smpboot: Booting Node 0 Processor 5 APIC 0xa
+<6>[ 1881.045768] CPU5 is up
+<6>[ 1881.045787] smpboot: Booting Node 0 Processor 6 APIC 0xc
+<6>[ 1881.047293] CPU6 is up
+<6>[ 1881.047310] smpboot: Booting Node 0 Processor 7 APIC 0xe
+<6>[ 1881.048939] CPU7 is up
+<6>[ 1881.048965] smpboot: Booting Node 0 Processor 8 APIC 0x10
+<6>[ 1881.051211] CPU8 is up
+<6>[ 1881.051231] smpboot: Booting Node 0 Processor 9 APIC 0x12
+<6>[ 1881.053082] CPU9 is up
+<6>[ 1881.053103] smpboot: Booting Node 0 Processor 10 APIC 0x14
+<6>[ 1881.054932] CPU10 is up
+<6>[ 1881.054959] smpboot: Booting Node 0 Processor 11 APIC 0x16
+<6>[ 1881.056624] CPU11 is up
+<6>[ 1881.056643] smpboot: Booting Node 0 Processor 12 APIC 0x18
+<6>[ 1881.058441] CPU12 is up
+<6>[ 1881.058461] smpboot: Booting Node 0 Processor 13 APIC 0x1a
+<6>[ 1881.060143] CPU13 is up
+<6>[ 1881.060163] smpboot: Booting Node 0 Processor 14 APIC 0x1c
+<6>[ 1881.062105] CPU14 is up
+<6>[ 1881.062130] smpboot: Booting Node 0 Processor 15 APIC 0x1e
+<6>[ 1881.064074] CPU15 is up
+<6>[ 1881.064102] smpboot: Booting Node 0 Processor 16 APIC 0x1
+<6>[ 1881.065721] Spectre V2 : Update user space SMT mitigation: STIBP always-on
+<6>[ 1881.065796] CPU16 is up
+<6>[ 1881.065810] smpboot: Booting Node 0 Processor 17 APIC 0x3
+<6>[ 1881.067097] CPU17 is up
+<6>[ 1881.067134] smpboot: Booting Node 0 Processor 18 APIC 0x5
+<6>[ 1881.068812] CPU18 is up
+<6>[ 1881.068824] smpboot: Booting Node 0 Processor 19 APIC 0x7
+<6>[ 1881.070348] CPU19 is up
+<6>[ 1881.070360] smpboot: Booting Node 0 Processor 20 APIC 0x9
+<6>[ 1881.071601] CPU20 is up
+<6>[ 1881.071613] smpboot: Booting Node 0 Processor 21 APIC 0xb
+<6>[ 1881.073249] CPU21 is up
+<6>[ 1881.073260] smpboot: Booting Node 0 Processor 22 APIC 0xd
+<6>[ 1881.074932] CPU22 is up
+<6>[ 1881.074944] smpboot: Booting Node 0 Processor 23 APIC 0xf
+<6>[ 1881.076542] CPU23 is up
+<6>[ 1881.076553] smpboot: Booting Node 0 Processor 24 APIC 0x11
+<6>[ 1881.078388] CPU24 is up
+<6>[ 1881.078401] smpboot: Booting Node 0 Processor 25 APIC 0x13
+<6>[ 1881.079911] CPU25 is up
+<6>[ 1881.079927] smpboot: Booting Node 0 Processor 26 APIC 0x15
+<6>[ 1881.081654] CPU26 is up
+<6>[ 1881.081668] smpboot: Booting Node 0 Processor 27 APIC 0x17
+<6>[ 1881.083816] CPU27 is up
+<6>[ 1881.083833] smpboot: Booting Node 0 Processor 28 APIC 0x19
+<6>[ 1881.085640] CPU28 is up
+<6>[ 1881.085653] smpboot: Booting Node 0 Processor 29 APIC 0x1b
+<6>[ 1881.087517] CPU29 is up
+<6>[ 1881.087534] smpboot: Booting Node 0 Processor 30 APIC 0x1d
+<6>[ 1881.088933] CPU30 is up
+<6>[ 1881.088947] smpboot: Booting Node 0 Processor 31 APIC 0x1f
+<6>[ 1881.090655] CPU31 is up
+<0>[ 1905.075697] watchdog: BUG: soft lockup - CPU#22 stuck for 23s! [migration/22:154]
+<2>[ 1905.075699] CPU#22 Utilization every 4000ms during lockup:
+<2>[ 1905.075700] 	#1: 100% system,	  0% softirq,	  0% hardirq,	  0% idle
+<2>[ 1905.075701] 	#2: 100% system,	  0% softirq,	  0% hardirq,	  0% idle
+<2>[ 1905.075701] 	#3: 100% system,	  0% softirq,	  1% hardirq,	  0% idle
+<2>[ 1905.075702] 	#4: 100% system,	  0% softirq,	  0% hardirq,	  0% idle
+<2>[ 1905.075702] 	#5: 100% system,	  0% softirq,	  0% hardirq,	  0% idle
+<4>[ 1905.075702] Modules linked in: lz4 lz4_compress rfcomm cmac algif_hash algif_skcipher af_alg bnep ccm snd_seq_dummy snd_hrtimer snd_seq snd_seq_device vfat fat snd_acp70 snd_acp_i2s snd_acp_pdm snd_acp_pcm snd_sof_amd_acp70 snd_sof_amd_acp63 snd_sof_amd_vangogh snd_sof_amd_rembrandt snd_sof_amd_renoir snd_sof_amd_acp snd_sof_pci snd_sof_xtensa_dsp snd_sof snd_sof_utils snd_pci_ps snd_soc_acpi_amd_match snd_hda_codec_alc269 snd_soc_acpi_amd_sdca_quirks snd_amd_sdw_acpi snd_hda_codec_realtek_lib soundwire_amd snd_hda_scodec_component soundwire_generic_allocation snd_hda_codec_generic soundwire_bus snd_soc_sdca snd_hda_codec_atihdmi snd_hda_codec_hdmi snd_hda_scodec_cs35l41_spi snd_soc_core snd_compress snd_hda_intel ac97_bus snd_pcm_dmaengine snd_rpl_pci_acp6x snd_hda_codec mt792x_lib amd_atl intel_rapl_msr mt76_connac_lib snd_acp_pci snd_amd_acpi_mach intel_rapl_common snd_hda_core hid_sensor_accel_3d snd_acp_legacy_common mt76 snd_intel_dspcfg hid_sensor_trigger snd_pci_acp6x btusb kfifo_buf snd_intel_sdw_acpi
+<4>[ 1905.075735]  ucsi_acpi asus_nb_wmi uvcvideo sp5100_tco btmtk hid_sensor_iio_common snd_pci_acp5x snd_hwdep typec_ucsi snd_hda_scodec_cs35l41_i2c videobuf2_vmalloc mac80211 industrialio asus_armoury btrtl snd_rn_pci_acp3x hid_sensor_custom snd_hda_scodec_cs35l41 uvc roles snd_pcm ov13b10 btbcm snd_soc_cs_amp_lib videobuf2_memops snd_acp_config typec snd_timer i2c_piix4 vboxnetadp(OE) btintel v4l2_fwnode videobuf2_v4l2 snd_soc_acpi snd_soc_cs35l41_lib vboxnetflt(OE) hid_sensor_hub bluetooth mousedev joydev videobuf2_common gpio_keys firmware_attributes_class wmi_bmof rapl pcspkr v4l2_async amd_pmf cfg80211 cs_dsp snd amdxdna k10temp i2c_smbus snd_pci_acp3x amdtee soundcore libarc4 videodev i2c_hid_acpi thunderbolt amd_sfh i2c_hid serial_multi_instantiate mc amd_pmc soc_button_array mac_hid vboxdrv(OE) kvm_amd kvm irqbypass i2c_dev dm_crypt encrypted_keys trusted asn1_encoder tee hid_asus asus_wmi sparse_keymap platform_profile hid_multitouch rfkill amdgpu amdxcp i2c_algo_bit dm_mod drm_ttm_helper ttm drm_exec sdhci_pci
+<4>[ 1905.075771]  drm_panel_backlight_quirks gpu_sched sdhci_uhs2 nvme drm_suballoc_helper sdhci drm_buddy nvme_core cqhci drm_display_helper nvme_keyring ghash_clmulni_intel nvme_auth aesni_intel mmc_core ccp cec video hkdf serio_raw wmi [last unloaded: mt7925_common]
+<4>[ 1905.075783] CPU: 22 UID: 0 PID: 154 Comm: migration/22 Tainted: G     U     OE       7.0.9-1-cachyos-bore #1 PREEMPT(full)  bc1e4c53e2004f6d9f63dfb378a8caf9306eba7b
+<4>[ 1905.075787] Tainted: [U]=USER, [O]=OOT_MODULE, [E]=UNSIGNED_MODULE
+<4>[ 1905.075788] Hardware name: ASUSTeK COMPUTER INC. ROG Flow Z13 GZ302EA_GZ302EA/GZ302EA, BIOS GZ302EA.311 08/01/2025
+<4>[ 1905.075788] Stopper: multi_cpu_stop+0x0/0x1c0 <- __stop_cpus.constprop.0+0x6d/0xb0
+<4>[ 1905.075797] RIP: 0010:stop_machine_yield+0x6/0x10
+<4>[ 1905.075799] Code: 20 7c d7 ff eb c3 e8 79 70 30 01 66 0f 1f 84 00 00 00 00 00 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 0f 1f 40 d6 f3 90 <c3> cc cc cc cc 0f 1f 44 00 00 90 90 90 90 90 90 90 90 90 90 90 90
+<4>[ 1905.075800] RSP: 0018:ffffd0700075be48 EFLAGS: 00000246
+<4>[ 1905.075802] RAX: 0000000000000201 RBX: ffffd070267cfb20 RCX: 0000000000000002
+<4>[ 1905.075802] RDX: ffff8ec301fa2030 RSI: 0000000000000286 RDI: ffffffffb92f5ea0
+<4>[ 1905.075803] RBP: ffffd070267cfb44 R08: 000001b5f9bdcfe7 R09: 0000000000000001
+<4>[ 1905.075803] R10: 000000000000001a R11: ffff8ea500d78000 R12: ffffffffb92f5ea0
+<4>[ 1905.075804] R13: 0000000000000001 R14: 0000000000000000 R15: 0000000000000001
+<4>[ 1905.075804] FS:  0000000000000000(0000) GS:ffff8ec348293000(0000) knlGS:0000000000000000
+<4>[ 1905.075805] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+<4>[ 1905.075806] CR2: 0000000000000000 CR3: 000000082e024000 CR4: 0000000000f50ef0
+<4>[ 1905.075806] PKRU: 55555554
+<4>[ 1905.075807] Call Trace:
+<4>[ 1905.075809]  <TASK>
+<4>[ 1905.075810]  multi_cpu_stop+0xd1/0x1c0
+<4>[ 1905.075815]  ? __pfx_multi_cpu_stop+0x10/0x10
+<4>[ 1905.075816]  cpu_stopper_thread+0x9e/0x140
+<4>[ 1905.075818]  ? __pfx_smpboot_thread_fn+0x10/0x10
+<4>[ 1905.075821]  smpboot_thread_fn+0xf3/0x220
+<4>[ 1905.075822]  kthread+0xe1/0x120
+<4>[ 1905.075825]  ? __pfx_kthread+0x10/0x10
+<4>[ 1905.075827]  ret_from_fork+0x2a7/0x340
+<4>[ 1905.075831]  ? __pfx_kthread+0x10/0x10
+<4>[ 1905.075832]  ret_from_fork_asm+0x1a/0x30
+<4>[ 1905.075836]  </TASK>
+<0>[ 1905.075837] Kernel panic - not syncing: softlockup: hung tasks
+<4>[ 1905.075882] CPU: 22 UID: 0 PID: 154 Comm: migration/22 Tainted: G     U     OEL      7.0.9-1-cachyos-bore #1 PREEMPT(full)  bc1e4c53e2004f6d9f63dfb378a8caf9306eba7b
+<4>[ 1905.075885] Tainted: [U]=USER, [O]=OOT_MODULE, [E]=UNSIGNED_MODULE, [L]=SOFTLOCKUP
+<4>[ 1905.075887] Hardware name: ASUSTeK COMPUTER INC. ROG Flow Z13 GZ302EA_GZ302EA/GZ302EA, BIOS GZ302EA.311 08/01/2025
+<4>[ 1905.075888] Stopper: multi_cpu_stop+0x0/0x1c0 <- __stop_cpus.constprop.0+0x6d/0xb0
+<4>[ 1905.075891] Call Trace:
+<4>[ 1905.075893]  <IRQ>
+<4>[ 1905.075894]  dump_stack_lvl+0x5d/0x80
+<4>[ 1905.075897]  vpanic+0x20a/0x410
+<4>[ 1905.075901]  ? __pfx_watchdog_timer_fn+0x10/0x10
+<4>[ 1905.075904]  panic+0x6b/0x70
+<4>[ 1905.075906]  watchdog_timer_fn.cold+0x254/0x29f
+<4>[ 1905.075909]  ? __pfx_watchdog_timer_fn+0x10/0x10
+<4>[ 1905.075911]  __hrtimer_run_queues+0x158/0x470
+<4>[ 1905.075914]  ? sched_balance_domains+0xf6/0x320
+<4>[ 1905.075918]  hrtimer_interrupt+0x111/0x400
+<4>[ 1905.075920]  ? sched_clock+0x10/0x30
+<4>[ 1905.075922]  __sysvec_apic_timer_interrupt+0x58/0x140
+<4>[ 1905.075926]  sysvec_apic_timer_interrupt+0x6c/0x90
+<4>[ 1905.075931]  </IRQ>
+<4>[ 1905.075931]  <TASK>
+<4>[ 1905.075932]  asm_sysvec_apic_timer_interrupt+0x1a/0x20
+<4>[ 1905.075935] RIP: 0010:stop_machine_yield+0x6/0x10
+<4>[ 1905.075937] Code: 20 7c d7 ff eb c3 e8 79 70 30 01 66 0f 1f 84 00 00 00 00 00 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 90 0f 1f 40 d6 f3 90 <c3> cc cc cc cc 0f 1f 44 00 00 90 90 90 90 90 90 90 90 90 90 90 90
+<4>[ 1905.075939] RSP: 0018:ffffd0700075be48 EFLAGS: 00000246
+<4>[ 1905.075940] RAX: 0000000000000201 RBX: ffffd070267cfb20 RCX: 0000000000000002
+<4>[ 1905.075942] RDX: ffff8ec301fa2030 RSI: 0000000000000286 RDI: ffffffffb92f5ea0
+<4>[ 1905.075943] RBP: ffffd070267cfb44 R08: 000001b5f9bdcfe7 R09: 0000000000000001
+<4>[ 1905.075944] R10: 000000000000001a R11: ffff8ea500d78000 R12: ffffffffb92f5ea0
+<4>[ 1905.075945] R13: 0000000000000001 R14: 0000000000000000 R15: 0000000000000001
+<4>[ 1905.075949]  multi_cpu_stop+0xd1/0x1c0
+<4>[ 1905.075951]  ? __pfx_multi_cpu_stop+0x10/0x10
+<4>[ 1905.075952]  cpu_stopper_thread+0x9e/0x140
+<4>[ 1905.075954]  ? __pfx_smpboot_thread_fn+0x10/0x10
+<4>[ 1905.075956]  smpboot_thread_fn+0xf3/0x220
+<4>[ 1905.075958]  kthread+0xe1/0x120
+<4>[ 1905.075959]  ? __pfx_kthread+0x10/0x10
+<4>[ 1905.075961]  ret_from_fork+0x2a7/0x340
+<4>[ 1905.075963]  ? __pfx_kthread+0x10/0x10
+<4>[ 1905.075965]  ret_from_fork_asm+0x1a/0x30
+<4>[ 1905.075967]  </TASK>
+<0>[ 1906.509537] Shutting down cpus with NMI
+<0>[ 1906.509783] Kernel Offset: 0x35400000 from 0xffffffff81000000 (relocation range: 0xffffffff80000000-0xffffffffbfffffff)

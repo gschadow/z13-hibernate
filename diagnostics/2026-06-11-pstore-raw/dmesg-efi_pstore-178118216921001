@@ -1,0 +1,19 @@
+Panic#1 Part21
+<6>[ 1876.979306] acpi-thermal LNXTHERM:00: PM: calling acpi_subsys_freeze @ 25329, parent: platform
+<6>[ 1876.979307] acpi-thermal LNXTHERM:00: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979309] amd_pmc AMDI000B:00: PM: calling acpi_subsys_freeze @ 25329, parent: platform
+<6>[ 1876.979310] amd_pmc AMDI000B:00: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979314] ucsi_acpi USBC000:00: PM: calling acpi_subsys_freeze @ 25329, parent: platform
+<6>[ 1876.979315] ucsi_acpi USBC000:00: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979318] platform OMNI13B1:00: PM: calling platform_pm_freeze @ 25329, parent: platform
+<6>[ 1876.979320] platform OMNI13B1:00: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979322] platform DRTM0001:00: PM: calling platform_pm_freeze @ 25329, parent: platform
+<6>[ 1876.979325] platform DRTM0001:00: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979327] platform MSFT0201:00: PM: calling platform_pm_freeze @ 25329, parent: platform
+<6>[ 1876.979329] platform MSFT0201:00: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979332] amd-pmf AMDI0105:00: PM: calling acpi_subsys_freeze @ 25329, parent: platform
+<6>[ 1876.979336] amd-pmf AMDI0105:00: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979338] platform acpi-cpufreq: PM: calling platform_pm_freeze @ 25329, parent: platform
+<6>[ 1876.979340] platform acpi-cpufreq: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979344] acpi-wmi PNP0C14:01: PM: calling acpi_subsys_freeze @ 25329, parent: platform
+<6>[ 1876.979346] acpi-wmi PNP0C14:01: PM: acpi_subsys_freeze returned 0 after 0 usecs

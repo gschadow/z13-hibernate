@@ -1,0 +1,36 @@
+Panic#1 Part6
+<6>[ 1881.060143] CPU13 is up
+<6>[ 1881.060163] smpboot: Booting Node 0 Processor 14 APIC 0x1c
+<6>[ 1881.062105] CPU14 is up
+<6>[ 1881.062130] smpboot: Booting Node 0 Processor 15 APIC 0x1e
+<6>[ 1881.064074] CPU15 is up
+<6>[ 1881.064102] smpboot: Booting Node 0 Processor 16 APIC 0x1
+<6>[ 1881.065721] Spectre V2 : Update user space SMT mitigation: STIBP always-on
+<6>[ 1881.065796] CPU16 is up
+<6>[ 1881.065810] smpboot: Booting Node 0 Processor 17 APIC 0x3
+<6>[ 1881.067097] CPU17 is up
+<6>[ 1881.067134] smpboot: Booting Node 0 Processor 18 APIC 0x5
+<6>[ 1881.068812] CPU18 is up
+<6>[ 1881.068824] smpboot: Booting Node 0 Processor 19 APIC 0x7
+<6>[ 1881.070348] CPU19 is up
+<6>[ 1881.070360] smpboot: Booting Node 0 Processor 20 APIC 0x9
+<6>[ 1881.071601] CPU20 is up
+<6>[ 1881.071613] smpboot: Booting Node 0 Processor 21 APIC 0xb
+<6>[ 1881.073249] CPU21 is up
+<6>[ 1881.073260] smpboot: Booting Node 0 Processor 22 APIC 0xd
+<6>[ 1881.074932] CPU22 is up
+<6>[ 1881.074944] smpboot: Booting Node 0 Processor 23 APIC 0xf
+<6>[ 1881.076542] CPU23 is up
+<6>[ 1881.076553] smpboot: Booting Node 0 Processor 24 APIC 0x11
+<6>[ 1881.078388] CPU24 is up
+<6>[ 1881.078401] smpboot: Booting Node 0 Processor 25 APIC 0x13
+<6>[ 1881.079911] CPU25 is up
+<6>[ 1881.079927] smpboot: Booting Node 0 Processor 26 APIC 0x15
+<6>[ 1881.081654] CPU26 is up
+<6>[ 1881.081668] smpboot: Booting Node 0 Processor 27 APIC 0x17
+<6>[ 1881.083816] CPU27 is up
+<6>[ 1881.083833] smpboot: Booting Node 0 Processor 28 APIC 0x19
+<6>[ 1881.085640] CPU28 is up
+<6>[ 1881.085653] smpboot: Booting Node 0 Processor 29 APIC 0x1b
+<6>[ 1881.087517] CPU29 is up
+<6>[ 1881.087534] smpboot: Booting Node 0 Processor 30 APIC 0x1d

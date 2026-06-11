@@ -46,4 +46,26 @@ for bt_path in /sys/bus/usb/devices/3-3 /sys/bus/usb/devices/3-3.*; do
     echo "s2idle-wakeup: disabled USB wakeup for $(basename $bt_path) (BT)" || true
 done
 
+# Serialize device suspend/resume callbacks. Lid-close suspends abort
+# instantly (a lid/EC wakeup event is still pending when the kernel checks
+# wakeup_count), and systemd-sleep re-enters suspend microseconds later;
+# with async PM callbacks this re-entry can race the amdgpu suspend path
+# and hang the machine (observed 2026-06-10: entry -> exit -> entry within
+# 220us, second entry never returned, hard power-off required).
+# Serial PM costs ~1-2s per suspend/resume cycle but removes the race.
+echo 0 > /sys/power/pm_async
+echo "s2idle-wakeup: pm_async=0 (serialized PM callbacks)"
+
+# Verbose PM wakeup-source logging so the next aborted suspend names its
+# wakeup source in the journal. Remove once the lid bounce is confirmed fixed.
+echo 1 > /sys/power/pm_debug_messages
+echo "s2idle-wakeup: pm_debug_messages=1 (diagnostic)"
+
+# Log each device's suspend/resume callback with timing. During hibernation's
+# screen-off device-suspend phase the journal is frozen and the display is
+# down; if the machine panics there, these kmsg lines (captured by efi_pstore)
+# identify which device was suspending when it died. Remove with the above.
+echo 1 > /sys/power/pm_print_times
+echo "s2idle-wakeup: pm_print_times=1 (diagnostic)"
+
 echo "s2idle-wakeup: configuration applied"

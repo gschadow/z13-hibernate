@@ -1,0 +1,18 @@
+Panic#1 Part20
+<6>[ 1876.979348] platform ASUS9001:00: PM: calling platform_pm_freeze @ 25329, parent: platform
+<6>[ 1876.979350] platform ASUS9001:00: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979353] platform ASUS2018:00: PM: calling platform_pm_freeze @ 25329, parent: platform
+<6>[ 1876.979355] platform ASUS2018:00: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979358] acpi-fan PNP0C0B:00: PM: calling platform_pm_freeze @ 25329, parent: platform
+<6>[ 1876.979361] acpi-fan PNP0C0B:00: PM: platform_pm_freeze returned 0 after 1 usecs
+<6>[ 1876.979363] acpi-wmi PNP0C14:00: PM: calling acpi_subsys_freeze @ 25329, parent: platform
+<6>[ 1876.979365] acpi-wmi PNP0C14:00: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979368] platform INT33D3:00: PM: calling platform_pm_freeze @ 25329, parent: platform
+<6>[ 1876.979370] platform INT33D3:00: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979373] platform MSFT0101:00: PM: calling platform_pm_freeze @ 25329, parent: platform
+<6>[ 1876.979375] platform MSFT0101:00: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979378] Serial bus multi instantiate pseudo device driver CSC3551:00: PM: calling acpi_subsys_freeze @ 25329, parent: AMDI0010:01
+<6>[ 1876.979381] Serial bus multi instantiate pseudo device driver CSC3551:00: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979385] platform AMDI0052:00: PM: calling platform_pm_freeze @ 25329, parent: platform
+<6>[ 1876.979387] platform AMDI0052:00: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979389] amd_gpio AMDI0030:00: PM: calling acpi_subsys_freeze @ 25329, parent: platform

@@ -1,0 +1,19 @@
+Panic#1 Part18
+<6>[ 1876.979438] acpi-ec PNP0C09:00: PM: calling acpi_subsys_freeze @ 25329, parent: 0000:00:14.3
+<6>[ 1876.979440] acpi-ec PNP0C09:00: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979444] platform PNP0800:00: PM: calling platform_pm_freeze @ 25329, parent: 0000:00:14.3
+<6>[ 1876.979446] platform PNP0800:00: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979448] platform PNP0C04:00: PM: calling platform_pm_freeze @ 25329, parent: 0000:00:14.3
+<6>[ 1876.979450] platform PNP0C04:00: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979453] pci 0000:00:14.3: PM: calling pci_pm_freeze @ 2972, parent: pci0000:00
+<6>[ 1876.979455] pci 0000:00:14.3: PM: pci_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979465] pcie_mp2_amd 0000:c4:00.7: PM: calling pci_pm_freeze @ 2972, parent: 0000:00:08.1
+<6>[ 1876.979468] pcie_mp2_amd 0000:c4:00.7: PM: pci_pm_freeze returned 0 after 1 usecs
+<6>[ 1876.979469] ccp 0000:c4:00.2: PM: calling pci_pm_freeze @ 2972, parent: 0000:00:08.1
+<6>[ 1876.979472] ccp 0000:c4:00.2: PM: pci_pm_freeze returned 0 after 1 usecs
+<6>[ 1876.979474] pci 0000:c2:00.0: PM: calling pci_pm_freeze @ 2972, parent: 0000:00:02.3
+<6>[ 1876.979475] pci 0000:c2:00.0: PM: pci_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979483] pcieport 0000:00:02.3: PM: calling pci_pm_freeze @ 25483, parent: pci0000:00
+<6>[ 1876.979486] pcieport 0000:00:02.2: PM: calling pci_pm_freeze @ 25484, parent: pci0000:00
+<6>[ 1876.979501] pcieport 0000:00:02.3: PM: pci_pm_freeze returned 0 after 12 usecs
+<6>[ 1876.979509] pcieport 0000:00:02.2: PM: pci_pm_freeze returned 0 after 14 usecs

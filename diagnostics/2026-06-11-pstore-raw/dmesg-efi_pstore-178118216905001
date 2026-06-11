@@ -1,0 +1,12 @@
+Panic#1 Part5
+<6>[ 1881.088933] CPU30 is up
+<6>[ 1881.088947] smpboot: Booting Node 0 Processor 31 APIC 0x1f
+<6>[ 1881.090655] CPU31 is up
+<0>[ 1905.075697] watchdog: BUG: soft lockup - CPU#22 stuck for 23s! [migration/22:154]
+<2>[ 1905.075699] CPU#22 Utilization every 4000ms during lockup:
+<2>[ 1905.075700] 	#1: 100% system,	  0% softirq,	  0% hardirq,	  0% idle
+<2>[ 1905.075701] 	#2: 100% system,	  0% softirq,	  0% hardirq,	  0% idle
+<2>[ 1905.075701] 	#3: 100% system,	  0% softirq,	  1% hardirq,	  0% idle
+<2>[ 1905.075702] 	#4: 100% system,	  0% softirq,	  0% hardirq,	  0% idle
+<2>[ 1905.075702] 	#5: 100% system,	  0% softirq,	  0% hardirq,	  0% idle
+<4>[ 1905.075702] Modules linked in: lz4 lz4_compress rfcomm cmac algif_hash algif_skcipher af_alg bnep ccm snd_seq_dummy snd_hrtimer snd_seq snd_seq_device vfat fat snd_acp70 snd_acp_i2s snd_acp_pdm snd_acp_pcm snd_sof_amd_acp70 snd_sof_amd_acp63 snd_sof_amd_vangogh snd_sof_amd_rembrandt snd_sof_amd_renoir snd_sof_amd_acp snd_sof_pci snd_sof_xtensa_dsp snd_sof snd_sof_utils snd_pci_ps snd_soc_acpi_amd_match snd_hda_codec_alc269 snd_soc_acpi_amd_sdca_quirks snd_amd_sdw_acpi snd_hda_codec_realtek_lib soundwire_amd snd_hda_scodec_component soundwire_generic_allocation snd_hda_codec_generic soundwire_bus snd_soc_sdca snd_hda_codec_atihdmi snd_hda_codec_hdmi snd_hda_scodec_cs35l41_spi snd_soc_core snd_compress snd_hda_intel ac97_bus snd_pcm_dmaengine snd_rpl_pci_acp6x snd_hda_codec mt792x_lib amd_atl intel_rapl_msr mt76_connac_lib snd_acp_pci snd_amd_acpi_mach intel_rapl_common snd_hda_core hid_sensor_accel_3d snd_acp_legacy_common mt76 snd_intel_dspcfg hid_sensor_trigger snd_pci_acp6x btusb kfifo_buf snd_intel_sdw_acpi

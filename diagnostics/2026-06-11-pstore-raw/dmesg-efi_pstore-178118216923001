@@ -1,0 +1,19 @@
+Panic#1 Part23
+<6>[ 1876.979139] port serial8250:0.4: PM: calling pm_runtime_force_suspend @ 25329, parent: serial8250:0
+<6>[ 1876.979140] port serial8250:0.4: PM: pm_runtime_force_suspend returned 0 after 0 usecs
+<6>[ 1876.979142] port serial8250:0.3: PM: calling pm_runtime_force_suspend @ 25329, parent: serial8250:0
+<6>[ 1876.979143] port serial8250:0.3: PM: pm_runtime_force_suspend returned 0 after 0 usecs
+<6>[ 1876.979145] port serial8250:0.2: PM: calling pm_runtime_force_suspend @ 25329, parent: serial8250:0
+<6>[ 1876.979146] port serial8250:0.2: PM: pm_runtime_force_suspend returned 0 after 0 usecs
+<6>[ 1876.979147] port serial8250:0.1: PM: calling pm_runtime_force_suspend @ 25329, parent: serial8250:0
+<6>[ 1876.979148] port serial8250:0.1: PM: pm_runtime_force_suspend returned 0 after 0 usecs
+<6>[ 1876.979150] port serial8250:0.0: PM: calling pm_runtime_force_suspend @ 25329, parent: serial8250:0
+<6>[ 1876.979151] port serial8250:0.0: PM: pm_runtime_force_suspend returned 0 after 0 usecs
+<6>[ 1876.979157] serial8250 serial8250: PM: calling platform_pm_freeze @ 25329, parent: platform
+<6>[ 1876.979159] serial8250 serial8250: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979174] input input1: PM: calling input_dev_freeze @ 25329, parent: PNP0C0C:00
+<6>[ 1876.979175] input input1: PM: input_dev_freeze returned 0 after 0 usecs
+<6>[ 1876.979177] input input0: PM: calling input_dev_freeze @ 25329, parent: PNP0C0D:00
+<6>[ 1876.979179] input input0: PM: input_dev_freeze returned 0 after 0 usecs
+<6>[ 1876.979200] pcspkr pcspkr: PM: calling platform_pm_freeze @ 25329, parent: platform
+<6>[ 1876.979201] pcspkr pcspkr: PM: platform_pm_freeze returned 0 after 0 usecs

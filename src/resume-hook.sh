@@ -19,6 +19,23 @@ fi
 kmsg "resume: === BEGIN RESUME HOOK ==="
 echo "=== Post-hibernate resume hook START $(date) ===" | tee -a "$LOGFILE"
 
+# Undo the hibernate-window settings from 05-hibernate-hook.sh:
+# back to pm_async=0 for s2idle safety, disarm the hang-to-panic diagnostics.
+echo 0 > /sys/power/pm_async 2>/dev/null || true
+sysctl -q kernel.hung_task_panic=0 2>/dev/null || true
+sysctl -q kernel.hung_task_timeout_secs=120 2>/dev/null || true
+sysctl -q kernel.hung_task_all_cpu_backtrace=0 2>/dev/null || true
+sysctl -q kernel.softlockup_panic=0 2>/dev/null || true
+sysctl -q kernel.softlockup_all_cpu_backtrace=0 2>/dev/null || true
+sysctl -q kernel.hardlockup_panic=0 2>/dev/null || true
+sysctl -q kernel.panic=0 2>/dev/null || true
+kmsg "resume: pm_async=0 restored, hibernate-window panic diagnostics disarmed"
+
+# Release the deep-C-state hold from the hibernate hook (survived inside the
+# restored image; the QoS request drops when the process dies).
+systemctl stop z13-cstate-hold 2>/dev/null || true
+kmsg "resume: z13-cstate-hold stopped (deep C-states re-enabled)"
+
 # Early framebuffer unblank. Do NOT write to /sys/class/drm/*/dpms here:
 # on Wayland KWin owns the DRM device exclusively and writing to DPMS sysfs
 # while KWin is holding the device causes atomic-commit EBUSY → black screen.
@@ -67,7 +84,8 @@ fi
 # back working without manual intervention.
 _mt_loaded=$(lsmod | awk '/^mt79/{print $1}' | tr '\n' ' ')
 kmsg "resume: mt79xx modules present: ${_mt_loaded:-none}"
-if lsmod | grep -q '^mt79'; then
+# (not `lsmod | grep -q`: SIGPIPE + pipefail can silently skip the branch)
+if [ -n "${_mt_loaded:-}" ]; then
   kmsg "resume: removing mt79xx stack for clean firmware re-init"
   modprobe -r mt7925e mt7925_common mt792x_lib mt76_connac_lib mt76 2>/dev/null || true
   sleep 1

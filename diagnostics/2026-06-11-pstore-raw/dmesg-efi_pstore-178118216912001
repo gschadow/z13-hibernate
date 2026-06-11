@@ -1,0 +1,18 @@
+Panic#1 Part12
+<6>[ 1880.939814] xhci_hcd 0000:c6:00.3: PM: calling pci_pm_freeze_noirq @ 25474, parent: 0000:00:08.3
+<6>[ 1880.939831] xhci_hcd 0000:c4:00.4: PM: calling pci_pm_freeze_noirq @ 25469, parent: 0000:00:08.1
+<6>[ 1880.939838] acpi-ec PNP0C09:00: PM: calling acpi_ec_suspend_noirq @ 25329, parent: 0000:00:14.3
+<6>[ 1880.939843] ACPI: EC: interrupt blocked
+<6>[ 1880.939844] acpi-ec PNP0C09:00: PM: acpi_ec_suspend_noirq returned 0 after 1 usecs
+<6>[ 1880.939864] pci 0000:00:08.0: PM: pci_pm_freeze_noirq returned 0 after 5234 usecs
+<6>[ 1880.939867] piix4_smbus 0000:00:14.0: PM: calling pci_pm_freeze_noirq @ 25486, parent: pci0000:00
+<6>[ 1880.939876] xhci_hcd 0000:c6:00.4: PM: calling pci_pm_freeze_noirq @ 25477, parent: 0000:00:08.3
+<6>[ 1880.939882] nvme 0000:c3:00.0: PM: calling pci_pm_freeze_noirq @ 220, parent: 0000:00:02.5
+<6>[ 1880.939883] pci 0000:00:00.2: PM: calling pci_pm_freeze_noirq @ 25478, parent: pci0000:00
+<6>[ 1880.939900] pci 0000:00:14.3: PM: calling pci_pm_freeze_noirq @ 2962, parent: pci0000:00
+<6>[ 1880.940226] pcie_mp2_amd 0000:c4:00.7: PM: calling pci_pm_freeze_noirq @ 25481, parent: 0000:00:08.1
+<6>[ 1880.940244] ccp 0000:c4:00.2: PM: calling pci_pm_freeze_noirq @ 1620, parent: 0000:00:08.1
+<6>[ 1880.940250] pci 0000:c2:00.0: PM: calling pci_pm_freeze_noirq @ 25465, parent: 0000:00:02.3
+<6>[ 1880.944961] xhci_hcd 0000:c6:00.0: PM: calling pci_pm_freeze_noirq @ 222, parent: 0000:00:08.3
+<6>[ 1880.950293] sdhci-pci 0000:c1:00.0: PM: pci_pm_freeze_noirq returned 0 after 15662 usecs
+<6>[ 1880.950302] pcieport 0000:00:02.2: PM: calling pci_pm_freeze_noirq @ 212, parent: pci0000:00

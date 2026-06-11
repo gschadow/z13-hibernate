@@ -1,0 +1,18 @@
+Panic#1 Part19
+<6>[ 1876.979392] amd_gpio AMDI0030:00: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979394] i2c_designware AMDI0010:01: PM: calling acpi_subsys_freeze @ 2972, parent: platform
+<6>[ 1876.979395] soc_button_array ACPI0011:00: PM: calling acpi_subsys_freeze @ 25329, parent: platform
+<6>[ 1876.979396] i2c_designware AMDI0010:01: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979397] soc_button_array ACPI0011:00: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979401] acpi-button PNP0C0C:00: PM: calling acpi_subsys_freeze @ 25329, parent: platform
+<6>[ 1876.979404] acpi-button PNP0C0C:00: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979406] platform PNP0103:00: PM: calling platform_pm_freeze @ 25329, parent: pci0000:00
+<6>[ 1876.979408] platform PNP0103:00: PM: platform_pm_freeze returned 0 after 0 usecs
+<6>[ 1876.979412] video acpi.video_bus.0: PM: calling pm_generic_suspend @ 25329, parent: 0000:00:08.1
+<6>[ 1876.979417] video acpi.video_bus.0: PM: pm_generic_suspend returned 0 after 0 usecs
+<6>[ 1876.979421] acpi-battery PNP0C0A:00: PM: calling acpi_subsys_freeze @ 25329, parent: PNP0C09:00
+<6>[ 1876.979424] acpi-battery PNP0C0A:00: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979427] acpi-button PNP0C0D:00: PM: calling acpi_subsys_freeze @ 25329, parent: PNP0C09:00
+<6>[ 1876.979429] acpi-button PNP0C0D:00: PM: acpi_subsys_freeze returned 0 after 0 usecs
+<6>[ 1876.979432] ac ACPI0003:00: PM: calling acpi_subsys_freeze @ 25329, parent: PNP0C09:00
+<6>[ 1876.979434] ac ACPI0003:00: PM: acpi_subsys_freeze returned 0 after 0 usecs

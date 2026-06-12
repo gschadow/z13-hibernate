@@ -21,6 +21,7 @@ install:
 	install -m 755 src/post-resume-hook.sh      $(DESTDIR)$(PREFIX)/lib/z13-hibernate/post-resume-hook.sh
 	install -m 755 src/s2idle-wakeup-config.sh  $(DESTDIR)$(PREFIX)/lib/z13-hibernate/s2idle-wakeup-config.sh
 	install -m 755 src/cstate-hold.sh           $(DESTDIR)$(PREFIX)/lib/z13-hibernate/cstate-hold.sh
+	install -m 755 src/lid-watch.sh             $(DESTDIR)$(PREFIX)/lib/z13-hibernate/lid-watch.sh
 
 	# systemd-sleep hooks (ordering via numeric prefix)
 	install -d $(DESTDIR)$(PREFIX)/lib/systemd/system-sleep
@@ -47,6 +48,8 @@ install:
 	               $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-hibernate-boot-cleanup.service
 	install -m 644 systemd/z13-s2idle-wakeup.service \
 	               $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-s2idle-wakeup.service
+	install -m 644 systemd/z13-lid-watch.service \
+	               $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-lid-watch.service
 
 	# initcpio hook (two search paths: /etc and /usr/lib)
 	install -d $(DESTDIR)/etc/initcpio/hooks $(DESTDIR)/etc/initcpio/install
@@ -74,12 +77,15 @@ deploy: install
 	systemctl enable z13-hibernate-gate.service
 	systemctl enable z13-hibernate-boot-cleanup.service
 	systemctl enable --now z13-s2idle-wakeup.service
+	systemctl enable --now z13-lid-watch.service
 	@echo ""
 	@echo "Services enabled. Sleep policy and lid config installed."
 	@echo "Still needed (once, after first install):"
 	@echo "  mkinitcpio -P"
 	@echo "  grub-mkconfig -o /boot/grub/grub.cfg"
-	@echo "  KDE: System Settings → Power Management → lid-close → Suspend-then-Hibernate"
+	@echo "  KDE: System Settings → Power Management → 'When laptop lid closed' →"
+	@echo "       'Do nothing' (BOTH On AC and On Battery): z13-lid-watch owns the"
+	@echo "       lid now (3s debounce; raw lid races s2idle on this machine)"
 	@echo "  NOTE: logind.conf changes take effect on next full reboot (do NOT restart logind live)"
 
 uninstall:

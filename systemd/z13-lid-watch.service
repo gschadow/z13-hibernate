@@ -1,0 +1,11 @@
+[Unit]
+Description=z13 debounced lid-switch suspend (raw lid events race s2idle; lid is a keyboard cover)
+After=multi-user.target
+
+[Service]
+ExecStart=/usr/lib/z13-hibernate/lid-watch.sh
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

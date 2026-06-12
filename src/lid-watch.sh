@@ -35,6 +35,16 @@ while sleep "$POLL_SEC"; do
       continue
     fi
     if [ $(( now - closed_since )) -ge "$DEBOUNCE_SEC" ]; then
+      # Stand down while any sleep cycle is in flight: closing the lid over
+      # a running hibernate (the normal "initiate and put it away" move)
+      # must not inject a competing suspend. The marker also covers the
+      # ~15s post-resume recovery; if the lid is still closed after the
+      # marker clears, the timer below has already matured and we suspend
+      # on the next poll — the right behavior for "resumed inside the bag".
+      if [ -f /run/z13-was-hibernated ] \
+         || systemctl list-jobs --no-legend 2>/dev/null | grep -qE 'sleep\.target|suspend\.target|hibernate\.target'; then
+        continue
+      fi
       closed_since=""
       echo "lid-watch: lid closed >= ${DEBOUNCE_SEC}s — suspending"
       systemctl suspend || echo "lid-watch: suspend request failed (already sleeping?)"

@@ -1,7 +1,8 @@
 # Makefile for z13-hibernate
 #
 # make install   — copy files into place (as root); does NOT enable/start services
-# make deploy    — install + enable services (as root, live system)
+# make deploy    — install + enable services + apply PowerDevil lid policy (as root)
+# make bootimage — rebuild initramfs + grub config (after initcpio/cmdline changes)
 # make uninstall — remove installed files
 #
 # /etc/default/grub and /etc/mkinitcpio.conf are NOT touched by any target.
@@ -10,8 +11,10 @@
 
 PREFIX  ?= /usr
 DESTDIR ?=
+# Desktop user whose PowerDevil config deploy adjusts (lid → Do nothing).
+PDUSER  ?= gunther
 
-.PHONY: install deploy uninstall
+.PHONY: install deploy bootimage uninstall
 
 install:
 	# Runtime library + helpers
@@ -67,10 +70,8 @@ install:
 	@echo "Files installed. Next steps:"
 	@echo "  1. Merge etc/default/grub.example params into your /etc/default/grub"
 	@echo "  2. Add 'hib-resume-prep' before 'sd-encrypt' in /etc/mkinitcpio.conf HOOKS"
-	@echo "  3. Run: make deploy   (enables services + applies sleep policy)"
-	@echo "  4. Run: mkinitcpio -P && grub-mkconfig -o /boot/grub/grub.cfg"
-	@echo "  5. In KDE: System Settings → Power Management → set lid-close to"
-	@echo "     'Suspend-then-Hibernate' (PowerDevil overrides logind for desktop sessions)"
+	@echo "  3. Run: make deploy     (enables services, applies sleep + lid policy)"
+	@echo "  4. Run: make bootimage  (rebuilds initramfs + grub config)"
 
 deploy: install
 	systemctl daemon-reload
@@ -78,22 +79,29 @@ deploy: install
 	systemctl enable z13-hibernate-boot-cleanup.service
 	systemctl enable --now z13-s2idle-wakeup.service
 	systemctl enable --now z13-lid-watch.service
+	# PowerDevil must not act on the raw lid: z13-lid-watch owns it (3s
+	# debounce; raw lid events race s2idle on this machine). 0 = Do nothing.
+	-sudo -u $(PDUSER) kwriteconfig6 --file powerdevilrc --group AC --group SuspendAndShutdown --key LidAction --notify 0
+	-sudo -u $(PDUSER) kwriteconfig6 --file powerdevilrc --group Battery --group SuspendAndShutdown --key LidAction --notify 0
+	-sudo -u $(PDUSER) kwriteconfig6 --file powerdevilrc --group LowBattery --group SuspendAndShutdown --key LidAction --notify 0
 	@echo ""
-	@echo "Services enabled. Sleep policy and lid config installed."
-	@echo "Still needed (once, after first install):"
-	@echo "  mkinitcpio -P"
-	@echo "  grub-mkconfig -o /boot/grub/grub.cfg"
-	@echo "  KDE: System Settings → Power Management → 'When laptop lid closed' →"
-	@echo "       'Do nothing' (BOTH On AC and On Battery): z13-lid-watch owns the"
-	@echo "       lid now (3s debounce; raw lid races s2idle on this machine)"
-	@echo "  NOTE: logind.conf changes take effect on next full reboot (do NOT restart logind live)"
+	@echo "Services enabled. Sleep, lid, and PowerDevil lid policy applied."
+	@echo "Run 'make bootimage' if the initcpio hook or kernel cmdline changed."
+	@echo "NOTE: logind.conf changes take effect on next full reboot (do NOT restart logind live)"
+
+bootimage:
+	mkinitcpio -P
+	grub-mkconfig -o /boot/grub/grub.cfg
 
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/lib/z13-hibernate/common.sh
 	rm -f $(DESTDIR)$(PREFIX)/lib/z13-hibernate/gate-hook.sh
 	rm -f $(DESTDIR)$(PREFIX)/lib/z13-hibernate/post-resume-hook.sh
 	rm -f $(DESTDIR)$(PREFIX)/lib/z13-hibernate/s2idle-wakeup-config.sh
+	rm -f $(DESTDIR)$(PREFIX)/lib/z13-hibernate/cstate-hold.sh
+	rm -f $(DESTDIR)$(PREFIX)/lib/z13-hibernate/lid-watch.sh
 	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-s2idle-wakeup.service
+	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-lid-watch.service
 	-rmdir $(DESTDIR)$(PREFIX)/lib/z13-hibernate 2>/dev/null || true
 	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system-sleep/05-hibernate-hook.sh
 	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system-sleep/95-resume-hook.sh

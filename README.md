@@ -52,9 +52,27 @@ AMD laptops) on Arch-based Linux (CachyOS, stock Arch, etc.).
 
 - **Battery drain / permanent data loss during unattended sleep** — there is no
   true S3 on this platform; s2idle keeps the SoC partially active, draining the
-  battery faster than expected.  Fixed with `SuspendThenHibernate`: short sleeps
-  use s2idle (fast ~2 s wake), but after 15 minutes the system falls through to
-  a full S4 hibernate automatically.
+  battery faster than expected.  `SuspendThenHibernate` is NOT the answer: its
+  S4 transition skips the system-sleep hibernate prep hooks (no WiFi unload, no
+  VBox handling) and hangs — it is explicitly disallowed in `sleep.conf.d`.
+  Instead, every s2idle resume checks the battery and schedules a full,
+  properly-prepped S4 hibernate when discharging at ≤ 10%.
+
+- **Lid bounce hard-wedge** — the lid is the detachable keyboard cover, so
+  accidental close + instant reopen is a normal event.  The reopen lands as a
+  pending wakeup during the s2idle entry, aborts it, and the immediate re-entry
+  races amdgpu into a hard freeze (even with `pm_async=0`).  Fixed by
+  `z13-lid-watch.service`: nobody acts on the raw lid switch (logind and
+  PowerDevil are set to ignore it); suspend happens only after the lid has been
+  closed for 3 s straight, so a brief flip never starts a suspend at all.
+
+- **stop_machine deadlock after S4 restore** — right after the image restore
+  re-onlines the CPUs, reschedule IPIs to some CPUs are lost (platform/BIOS
+  bug, GZ302EA.311); CPUs sitting in deep ACPI `io_idle` sleep through the
+  stop request and the machine wedges (pstore dumps in `diagnostics/`).  Fixed
+  by `cstate-hold.sh`: PM QoS pinned to 0 (no deep C-states) across the whole
+  hibernate window — the holder is frozen into the image, so the restore side
+  is protected; C1/mwait CPUs wake via the monitored flag without an IPI.
 
 ## Files
 
@@ -65,12 +83,17 @@ AMD laptops) on Arch-based Linux (CachyOS, stock Arch, etc.).
 | `src/post-resume-hook.sh` | `/usr/lib/z13-hibernate/post-resume-hook.sh` | T+15 s after resume: retries compositor resume, restarts GPU services, final LED |
 | `src/hibernate-hook.sh` | `/usr/lib/systemd/system-sleep/05-hibernate-hook.sh` | Before image write: LZ4, 12 threads, Performance EPP, WiFi unload, VBox save+unload, shutdown mode |
 | `src/resume-hook.sh` | `/usr/lib/systemd/system-sleep/95-resume-hook.sh` | On resume: early compositor resume, WiFi clean reload, schedule post-resume |
-| `src/s2idle-resume-fixup.sh` | `/usr/lib/systemd/system-sleep/50-s2idle-resume-fixup.sh` | On every s2idle wake: re-trigger power_supply uevents to fix ASUS EC AC-status reporting bug |
+| `src/s2idle-resume-fixup.sh` | `/usr/lib/systemd/system-sleep/50-s2idle-resume-fixup.sh` | Pre-suspend 2 s settle; on every s2idle wake: re-trigger power_supply uevents (ASUS EC AC-status bug) + hibernate at ≤ 10% battery discharging |
+| `src/s2idle-wakeup-config.sh` | `/usr/lib/z13-hibernate/s2idle-wakeup-config.sh` | At boot: disable spurious ACPI/USB wakeup sources, set `pm_async=0` |
+| `src/cstate-hold.sh` | `/usr/lib/z13-hibernate/cstate-hold.sh` | Transient QoS holder: no deep C-states during hibernate+restore (lost-IPI deadlock workaround) |
+| `src/lid-watch.sh` | `/usr/lib/z13-hibernate/lid-watch.sh` | Debounced lid handling: suspend only after 3 s sustained close |
 | `systemd/z13-hibernate-gate.service` | `/usr/lib/systemd/system/` | Runs gate-hook before `systemd-hibernate.service` |
 | `systemd/systemd-hibernate.service.d/10-gate.conf` | `/usr/lib/systemd/system/systemd-hibernate.service.d/` | Drop-in: gate is `RequiredBy` hibernate |
 | `systemd/z13-hibernate-boot-cleanup.service` | `/usr/lib/systemd/system/` | On fresh boot: cleans stale PID files (skipped on S4 resume) |
-| `etc/systemd/sleep.conf.d/z13-suspend-then-hibernate.conf` | `/etc/systemd/sleep.conf.d/` | Enables SuspendThenHibernate with 15-minute S4 fallback |
-| `etc/systemd/logind.conf.d/z13-lid.conf` | `/etc/systemd/logind.conf.d/` | Lid close → suspend-then-hibernate at logind level |
+| `systemd/z13-s2idle-wakeup.service` | `/usr/lib/systemd/system/` | Runs s2idle-wakeup-config at boot |
+| `systemd/z13-lid-watch.service` | `/usr/lib/systemd/system/` | Runs lid-watch.sh (the only lid actor) |
+| `etc/systemd/sleep.conf.d/z13-suspend-then-hibernate.conf` | `/etc/systemd/sleep.conf.d/` | **Disallows** SuspendThenHibernate (its S4 transition skips the hibernate prep hooks) |
+| `etc/systemd/logind.conf.d/z13-lid.conf` | `/etc/systemd/logind.conf.d/` | logind ignores the lid (z13-lid-watch owns it) |
 | `etc/initcpio/hooks/hib-resume-prep` | `/etc/initcpio/hooks/` | Thin initramfs hook: modprobes amdgpu/asus_wmi before LUKS prompt |
 | `etc/default/grub.example` | (manual merge) | Required kernel parameters |
 | `etc/mkinitcpio.conf.example` | (manual merge) | Required HOOKS order |
@@ -96,14 +119,13 @@ diff /etc/default/grub etc/default/grub.example
 #    (see etc/mkinitcpio.conf.example for the full example line)
 
 # 3. Rebuild initramfs and GRUB config
-mkinitcpio -P
-grub-mkconfig -o /boot/grub/grub.cfg
-
-# 4. In KDE: System Settings → Power Management → set "When laptop lid is closed"
-#    to "Suspend-then-Hibernate" on both Battery and AC tabs.
-#    (KDE PowerDevil overrides logind for desktop sessions; etc/systemd/logind.conf.d/
-#    covers the lock screen and any non-KDE seat.)
+make bootimage
 ```
+
+`make deploy` also sets PowerDevil's lid action to "Do nothing" for `PDUSER`
+(default `gunther`) — required because `z13-lid-watch.service` is the only
+thing allowed to act on the lid switch.  Verify in System Settings → Power
+Management if in doubt.  The logind drop-in takes effect on the next reboot.
 
 `make install` is safe to re-run after source changes. It never touches
 `/etc/default/grub` or `/etc/mkinitcpio.conf`.
@@ -163,7 +185,7 @@ sudo luks/setup-hibernate-luks2.sh
 ## How it all fits together
 
 ```
-systemctl hibernate   (or automatic fallback from SuspendThenHibernate after 15 min)
+systemctl hibernate   (manual, or scheduled by the ≤10%-battery check on s2idle resume)
   → hibernate.target
     → z13-hibernate-gate.service     (gate-hook.sh)
         • Suspend KWin compositor    (drains GPU display fences)
@@ -203,12 +225,15 @@ systemctl hibernate   (or automatic fallback from SuspendThenHibernate after 15 
 For s2idle (normal sleep/wake, lid close):
 
 ```
-lid close  →  s2idle
+lid close  →  z13-lid-watch: 3 s debounce
+                • reopened inside the window → no-op (no suspend starts)
+                • still closed after 3 s     → systemctl suspend (s2idle)
+              50-s2idle-resume-fixup.sh  pre suspend: 2 s settle
 lid open   →  50-s2idle-resume-fixup.sh  post suspend
                 • Re-trigger power_supply uevents
                   (fixes ASUS EC AC-status misreport → prevents spurious UPower action)
-  OR (after HibernateDelaySec=15min)
-             →  automatic transition to full S4  (same path as above)
+                • Battery discharging at ≤ 10% → schedule full S4 hibernate
+                  (with all prep hooks — this replaces SuspendThenHibernate)
 ```
 
 ## LED color legend

@@ -42,6 +42,7 @@ while sleep "$POLL_SEC"; do
       # marker clears, the timer below has already matured and we suspend
       # on the next poll — the right behavior for "resumed inside the bag".
       if [ -f /run/z13-was-hibernated ] \
+         || [ -f /run/z13-hibernate-pending ] \
          || systemctl list-jobs --no-legend 2>/dev/null | grep -qE 'sleep\.target|suspend\.target|hibernate\.target'; then
         continue
       fi

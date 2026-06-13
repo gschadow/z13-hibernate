@@ -56,7 +56,18 @@ AMD laptops) on Arch-based Linux (CachyOS, stock Arch, etc.).
   S4 transition skips the system-sleep hibernate prep hooks (no WiFi unload, no
   VBox handling) and hangs — it is explicitly disallowed in `sleep.conf.d`.
   Instead, every s2idle resume checks the battery and schedules a full,
-  properly-prepped S4 hibernate when discharging at ≤ 10%.
+  properly-prepped S4 hibernate when discharging at ≤ 10%.  After 3 h of total
+  sleep a hibernate is also scheduled unconditionally (see WiFi hang below).
+
+- **WiFi driver hang during device-suspend (s2idle)** — after many hours of
+  runtime `mt7925e`'s firmware accumulates state that causes `wiphy_suspend()`
+  to time out, hanging the device-suspend phase indefinitely.  Confirmed
+  2026-06-12: PM: suspend of devices complete was never logged for an 8-hour
+  sleep; the machine crashed when the lid was opened next morning.  Same root
+  cause as the hibernate-path hang (already fixed in `05-hibernate-hook.sh`).
+  Fixed in `50-s2idle-resume-fixup.sh`: unload `mt7925e` before sleep, reload
+  on wake (adds ~3 s to suspend entry; WiFi reconnects via NetworkManager).
+  An RTC alarm fires at 3 h to force a hibernate even when the lid stays closed.
 
 - **Lid bounce hard-wedge** — the lid is the detachable keyboard cover, so
   accidental close + instant reopen is a normal event.  The reopen lands as a
@@ -228,12 +239,24 @@ For s2idle (normal sleep/wake, lid close):
 lid close  →  z13-lid-watch: 3 s debounce
                 • reopened inside the window → no-op (no suspend starts)
                 • still closed after 3 s     → systemctl suspend (s2idle)
-              50-s2idle-resume-fixup.sh  pre suspend: 2 s settle
-lid open   →  50-s2idle-resume-fixup.sh  post suspend
+              50-s2idle-resume-fixup.sh  pre suspend:
+                • 2 s settle (lid EC event drain)
+                • record sleep-session start (first entry only)
+                • set RTC alarm for 3 h from now
+                • bring wlp194s0 down + 1 s drain
+                • modprobe -r mt7925e  (bypasses wiphy_suspend() hang)
+              (machine sleeps in s2idle)
+any wake   →  50-s2idle-resume-fixup.sh  post suspend:
+                • cancel RTC alarm
+                • modprobe mt7925e  (clean firmware re-init)
                 • Re-trigger power_supply uevents
                   (fixes ASUS EC AC-status misreport → prevents spurious UPower action)
                 • Battery discharging at ≤ 10% → schedule full S4 hibernate
                   (with all prep hooks — this replaces SuspendThenHibernate)
+                • Slept ≥ 3 h total → set z13-hibernate-pending flag,
+                  schedule hibernate in 5 s (lid-watch stands down on flag)
+              z13-lid-watch (if lid still closed): re-suspends after 3 s
+                unless z13-hibernate-pending is set → skips to let hibernate win
 ```
 
 ## LED color legend

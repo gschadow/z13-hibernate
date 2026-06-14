@@ -23,14 +23,18 @@
 #
 # post/suspend:
 #   1. Cancel RTC alarm.
-#   2. Reload mt7925e (if we unloaded it).
-#   3. Re-trigger power_supply uevents — ASUS EC misreports AC as disconnected
+#   2. Framebuffer unblank — DPMS may have been off before sleep; on Z13 the
+#      keyboard IS the lid so no key event fires on lid-open to wake DPMS.
+#   3. Reload mt7925e (if we unloaded it) — with timeout 15 to prevent an
+#      indefinite hang from a page_pool zombie left by the pre-hook unload
+#      (confirmed 2026-06-13: blocked ~80 s until hard reset).
+#   4. SimulateUserActivity via qdbus — tells KDE to re-enable DPMS outputs.
+#   5. Re-trigger power_supply uevents — ASUS EC misreports AC as disconnected
 #      after s2idle; without this UPower can fire CriticalPowerAction on AC.
-#   4. Log pm_wakeup_irq for spurious-wake diagnosis.
-#   5. Battery safety net — hibernate at ≤ 10% discharging.
-#   6. Long-sleep gate — if slept >= MAX_S2IDLE_SEC, set z13-hibernate-pending
-#      flag so lid-watch doesn't re-suspend, then schedule a hibernate (the
-#      RTC alarm fires to trigger this even when the lid stays closed).
+#   6. Log pm_wakeup_irq for spurious-wake diagnosis.
+#   7. Battery safety net — hibernate at ≤ 10% discharging.
+#   8. Long-sleep gate — if slept >= MAX_S2IDLE_SEC, set z13-hibernate-pending
+#      flag so lid-watch doesn't re-suspend, then schedule a hibernate.
 #
 # Not needed for S4 hibernate (handled by 05-hibernate-hook.sh /
 # 95-resume-hook.sh which have their own WiFi and recovery logic).
@@ -56,17 +60,23 @@ case "${1:-}/${2:-}" in
       # lid-close session (brief internal wakeup + immediate re-suspend).
       [ -f "$SLEEP_SESSION_START" ] || date +%s > "$SLEEP_SESSION_START"
 
-      # RTC wakeup alarm: ensure the machine surfaces so the post hook can
-      # trigger hibernate after a long sleep (even with lid still closed).
+      # RTC wakeup alarm — set for MAX_S2IDLE_SEC from now.
+      # NOTE: on this platform (GZ302EA) the RTC has no entry in
+      # /proc/acpi/wakeup, meaning the RTC is NOT an ACPI wakeup source.
+      # Confirmed 2026-06-13: the alarm fires a 376 μs kernel-internal
+      # interrupt (PM: suspend exit → entry gap) but does NOT thaw userspace
+      # or invoke the post hook.  Code is harmless and left for other hw.
       if [ -w "$RTC_WAKEALARM" ]; then
         echo 0 > "$RTC_WAKEALARM" 2>/dev/null || true
         echo $(( $(date +%s) + MAX_S2IDLE_SEC )) > "$RTC_WAKEALARM" 2>/dev/null || true
       fi
 
-      # Bring the WiFi interface down and drain before unloading (page_pool
-      # zombie avoidance — same 1 s wait as the hibernate hook).
+      # Bring the WiFi interface down and drain before unloading.
+      # 3 s: 1 s was not enough — a page still in-flight at the DMA level
+      # survives as a page_pool zombie that causes modprobe in the post hook
+      # to hang indefinitely (confirmed 2026-06-13; post hook blocked ~80 s).
       ip link set "$_wifi_if" down 2>/dev/null || true
-      sleep 1
+      sleep 3
 
       # Unload mt7925e to bypass the buggy wiphy_suspend() callback.
       if [ -d /sys/module/mt7925e ]; then
@@ -84,12 +94,48 @@ case "${1:-}/${2:-}" in
       echo 0 > "$RTC_WAKEALARM" 2>/dev/null || true
     fi
 
+    # Unblank the framebuffer immediately on wake — before the modprobe
+    # below, which can block up to 15 s.  On Z13 the keyboard IS the lid, so
+    # lid-open generates no key event and DPMS stays off without an explicit
+    # unblank.  Do NOT touch /sys/class/drm/*/dpms: KWin owns the DRM device
+    # on Wayland; writing DPMS sysfs while KWin holds the device causes
+    # atomic-commit EBUSY → black screen.  Same pattern as 95-resume-hook.sh.
+    ( for f in /sys/class/graphics/*/blank; do [ -w "$f" ] && echo 0 > "$f" 2>/dev/null || true; done ) 2>/dev/null || true
+
     # Reload mt7925e if we unloaded it in the pre hook.
+    # timeout 15: a page_pool zombie left from the pre-hook unload (one page
+    # still in-flight in hardware DMA at module removal time) can cause
+    # modprobe to block indefinitely — confirmed 2026-06-13 where the hook
+    # hung ~80 s until a hard reset, preventing the long-sleep hibernate gate
+    # from ever firing.  Cap it; WiFi reconnects via NM on the next boot if
+    # needed.
     if [ -f "$MT_UNLOADED_FLAG" ]; then
       rm -f "$MT_UNLOADED_FLAG"
-      modprobe mt7925e 2>/dev/null \
+      timeout 15 modprobe mt7925e 2>/dev/null \
         && echo "s2idle-resume-fixup: mt7925e reloaded" \
-        || echo "s2idle-resume-fixup: mt7925e reload failed — WiFi may be down"
+        || echo "s2idle-resume-fixup: mt7925e reload timed-out/failed — WiFi may be down"
+    fi
+
+    # Tell KDE that user activity occurred so it re-enables DPMS outputs.
+    # On Z13 the keyboard IS the lid; attaching it generates an ACPI lid
+    # switch event (not a key event), so KDE's DPMS never wakes from the
+    # keyboard-attach alone.  SimulateUserActivity is the cleanest fix.
+    _uid=$(id -u gunther 2>/dev/null || echo "")
+    if [ -n "$_uid" ]; then
+      _xdg="/run/user/$_uid"
+      _wl=""
+      for _w in wayland-0 wayland-1 wayland-2; do
+        [ -S "$_xdg/$_w" ] && _wl="$_w" && break
+      done
+      if [ -n "$_wl" ]; then
+        sudo -u gunther env \
+          XDG_RUNTIME_DIR="$_xdg" \
+          DBUS_SESSION_BUS_ADDRESS="unix:path=$_xdg/bus" \
+          WAYLAND_DISPLAY="$_wl" \
+          qdbus org.kde.ScreenSaver /ScreenSaver SimulateUserActivity 2>/dev/null \
+          && echo "s2idle-resume-fixup: SimulateUserActivity sent (DPMS wake)" \
+          || true
+      fi
     fi
 
     # Re-trigger uevents for all power_supply devices so that UPower and

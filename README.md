@@ -66,8 +66,11 @@ AMD laptops) on Arch-based Linux (CachyOS, stock Arch, etc.).
   sleep; the machine crashed when the lid was opened next morning.  Same root
   cause as the hibernate-path hang (already fixed in `05-hibernate-hook.sh`).
   Fixed in `50-s2idle-resume-fixup.sh`: unload `mt7925e` before sleep, reload
-  on wake (adds ~3 s to suspend entry; WiFi reconnects via NetworkManager).
-  An RTC alarm fires at 3 h to force a hibernate even when the lid stays closed.
+  on wake with `timeout 15` (adds ~3 s to suspend entry; WiFi reconnects via
+  NetworkManager).  A long-sleep gate triggers a full S4 hibernate when the
+  machine wakes after ≥ 3 h total s2idle.  (An RTC alarm is also armed but
+  confirmed ineffective on this platform: the RTC has no ACPI wakeup entry so
+  the alarm fires a 376 μs kernel-internal interrupt only — no userspace thaw.)
 
 - **Lid bounce hard-wedge** — the lid is the detachable keyboard cover, so
   accidental close + instant reopen is a normal event.  The reopen lands as a
@@ -242,13 +245,17 @@ lid close  →  z13-lid-watch: 3 s debounce
               50-s2idle-resume-fixup.sh  pre suspend:
                 • 2 s settle (lid EC event drain)
                 • record sleep-session start (first entry only)
-                • set RTC alarm for 3 h from now
-                • bring wlp194s0 down + 1 s drain
+                • set RTC alarm for 3 h (harmless on this hw; see WiFi note)
+                • bring wlp194s0 down + 3 s drain (reduces page_pool zombies)
                 • modprobe -r mt7925e  (bypasses wiphy_suspend() hang)
               (machine sleeps in s2idle)
 any wake   →  50-s2idle-resume-fixup.sh  post suspend:
                 • cancel RTC alarm
-                • modprobe mt7925e  (clean firmware re-init)
+                • framebuffer unblank (display recovery: keyboard IS the lid,
+                  no key event fires on lid-open, DPMS stays off otherwise)
+                • timeout 15 modprobe mt7925e  (timeout prevents ~80 s hang
+                  from page_pool zombie left by pre-hook unload; 2026-06-13)
+                • qdbus SimulateUserActivity → KDE re-enables DPMS outputs
                 • Re-trigger power_supply uevents
                   (fixes ASUS EC AC-status misreport → prevents spurious UPower action)
                 • Battery discharging at ≤ 10% → schedule full S4 hibernate

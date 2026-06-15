@@ -64,16 +64,28 @@ case "${1:-}/${2:-}" in
       # lid-close session (brief internal wakeup + immediate re-suspend).
       [ -f "$SLEEP_SESSION_START" ] || date +%s > "$SLEEP_SESSION_START"
 
-      # RTC wakeup alarm — set for MAX_S2IDLE_SEC from now.
-      # NOTE: on this platform (GZ302EA) the RTC has no entry in
-      # /proc/acpi/wakeup, meaning the RTC is NOT an ACPI wakeup source.
-      # Confirmed 2026-06-13: the alarm fires a 376 μs kernel-internal
-      # interrupt (PM: suspend exit → entry gap) but does NOT thaw userspace
-      # or invoke the post hook.  Code is harmless and left for other hw.
+      # RTC sysfs wakealarm — kept for completeness but confirmed ineffective
+      # on GZ302EA (RTC not an ACPI S0 wakeup source; fires a ~200 μs
+      # kernel-internal interrupt only, never thaws userspace).
       if [ -w "$RTC_WAKEALARM" ]; then
         echo 0 > "$RTC_WAKEALARM" 2>/dev/null || true
         echo $(( $(date +%s) + MAX_S2IDLE_SEC )) > "$RTC_WAKEALARM" 2>/dev/null || true
       fi
+
+      # CLOCK_REALTIME_ALARM wake via systemd WakeSystem=yes.
+      # Uses the alarmtimer subsystem (separate kernel path from sysfs
+      # wakealarm above — may work via rtc-efi or another backend).
+      # If successful the machine wakes in MAX_S2IDLE_SEC, our post hook
+      # fires, sees lid=closed + elapsed >= threshold, and hibernates.
+      # Cancelled in the post hook so a user lid-open cleans it up.
+      systemctl stop z13-s2idle-wake-alarm.timer 2>/dev/null || true
+      systemd-run --no-block \
+        --on-active="${MAX_S2IDLE_SEC}s" \
+        --property=WakeSystem=yes \
+        --unit=z13-s2idle-wake-alarm \
+        -- /bin/true 2>/dev/null \
+        && echo "s2idle-resume-fixup: z13-s2idle-wake-alarm set for ${MAX_S2IDLE_SEC}s (WakeSystem=yes)" \
+        || echo "s2idle-resume-fixup: WARNING: z13-s2idle-wake-alarm scheduling failed"
 
       # Bring the WiFi interface down and drain before unloading.
       # 3 s: 1 s was not enough — a page still in-flight at the DMA level
@@ -92,11 +104,11 @@ case "${1:-}/${2:-}" in
     ;;
 
   post/suspend|post/hybrid-sleep|post/suspend-then-hibernate)
-    # Cancel the RTC alarm (set in pre/suspend; cancel unconditionally to
-    # avoid a stale alarm waking the machine a second time).
+    # Cancel both wake alarms set in pre/suspend.
     if [ -w "$RTC_WAKEALARM" ]; then
       echo 0 > "$RTC_WAKEALARM" 2>/dev/null || true
     fi
+    systemctl stop z13-s2idle-wake-alarm.timer 2>/dev/null || true
 
     # Display recovery — must happen BEFORE the modprobe below, which can
     # block up to 15 s.  On Z13 the keyboard IS the lid; lid-open generates

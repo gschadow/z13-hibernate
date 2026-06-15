@@ -9,10 +9,10 @@
 #   2. Sleep-session tracking — /run/z13-sleep-session-start records when this
 #      lid-close session began; brief re-suspends don't reset it so the post
 #      hook can measure the true total sleep duration.
-#   3. RTC wake alarm — set MAX_S2IDLE_SEC from now. When the machine is
-#      properly in s2idle the alarm wakes it so the post hook can schedule a
-#      hibernate (prevents indefinitely long s2idle that ends in a frozen
-#      black screen on resume).
+#   3. RTC wake alarm — set MAX_S2IDLE_SEC from now.  NOTE: on GZ302EA the
+#      RTC is NOT an ACPI S0 wakeup source (only S4).  The alarm fires a
+#      ~200 μs kernel-internal interrupt only; it does NOT thaw userspace.
+#      The code is harmless and future-proofs for a working wakeup source.
 #   4. mt7925e unload — 2026-06-12: after ~11 h of runtime the device-suspend
 #      phase hung at 17:27; "PM: suspend of devices complete" was never logged;
 #      the machine sat in a broken PM state for 8 h until it crashed when the
@@ -33,8 +33,12 @@
 #      after s2idle; without this UPower can fire CriticalPowerAction on AC.
 #   6. Log pm_wakeup_irq for spurious-wake diagnosis.
 #   7. Battery safety net — hibernate at ≤ 10% discharging.
-#   8. Long-sleep gate — if slept >= MAX_S2IDLE_SEC, set z13-hibernate-pending
-#      flag so lid-watch doesn't re-suspend, then schedule a hibernate.
+#   8. Long-sleep gate — if an autonomous wake occurs while the lid is STILL
+#      CLOSED after >= MAX_S2IDLE_SEC, hibernate.  Lid-open always resumes
+#      normally; the gate must never fire on user lid-open (bad UX confirmed
+#      2026-06-15).  Currently no S0 wakeup source is available on this
+#      platform (RTC only wakes from S4); gate is future-proof for when one
+#      is found.
 #
 # Not needed for S4 hibernate (handled by 05-hibernate-hook.sh /
 # 95-resume-hook.sh which have their own WiFi and recovery logic).
@@ -45,7 +49,7 @@ SLEEP_SESSION_START=/run/z13-sleep-session-start
 MT_UNLOADED_FLAG=/run/z13-s2idle-mt-unloaded
 RTC_WAKEALARM=/sys/class/rtc/rtc0/wakealarm
 HIB_PENDING=/run/z13-hibernate-pending
-MAX_S2IDLE_SEC=10800  # 3 hours: hibernate on wake if slept this long
+MAX_S2IDLE_SEC=3600   # 1 hour: hibernate threshold (only on auto-wake, not lid-open)
 _wifi_if=wlp194s0
 
 case "${1:-}/${2:-}" in
@@ -168,31 +172,28 @@ case "${1:-}/${2:-}" in
       fi
     fi
 
-    # Long-sleep gate: after MAX_S2IDLE_SEC total sleep (RTC alarm or user
-    # wake), hibernate instead of returning to the desktop. Resume from 3+ h
-    # of s2idle risks driver-state rot; hibernate is the safe landing.
+    # Long-sleep gate: hibernate only on autonomous wake (lid still closed)
+    # after >= MAX_S2IDLE_SEC.  NEVER hibernate on user lid-open.
     if [ -f "$SLEEP_SESSION_START" ]; then
       session_start=$(cat "$SLEEP_SESSION_START")
       now=$(date +%s)
       elapsed=$(( now - session_start ))
-      if [ "$elapsed" -ge "$MAX_S2IDLE_SEC" ]; then
-        echo "s2idle-resume-fixup: slept ${elapsed}s (>=${MAX_S2IDLE_SEC}s threshold) — scheduling hibernate"
+      lid_state=$(awk '{print $2}' /proc/acpi/button/lid/LID/state 2>/dev/null || echo open)
+
+      if [ "$lid_state" = "closed" ] && [ "$elapsed" -ge "$MAX_S2IDLE_SEC" ]; then
+        # Autonomous wake, lid still closed, slept long enough → hibernate.
+        echo "s2idle-resume-fixup: autonomous wake after ${elapsed}s, lid closed — scheduling hibernate"
         rm -f "$SLEEP_SESSION_START"
-        # Tell lid-watch to stand down while hibernate is starting (it checks
-        # this flag before re-suspending).
         touch "$HIB_PENDING"
         systemd-run --on-active=5s --unit=z13-long-sleep-hibernate \
           bash -c "systemctl hibernate; rm -f $HIB_PENDING" \
           || rm -f "$HIB_PENDING"
-      else
-        lid_state=$(awk '{print $2}' /proc/acpi/button/lid/LID/state 2>/dev/null || echo open)
-        if [ "$lid_state" = "open" ]; then
-          # Lid is open, sleep was short — user woke normally; clear session.
-          rm -f "$SLEEP_SESSION_START"
-        fi
-        # lid still closed + under threshold: keep marker; machine will
-        # re-suspend via lid-watch, which preserves the session clock.
+      elif [ "$lid_state" = "open" ]; then
+        # User opened the lid — always resume normally, never hibernate.
+        echo "s2idle-resume-fixup: lid opened after ${elapsed}s — resuming normally"
+        rm -f "$SLEEP_SESSION_START"
       fi
+      # lid closed + under threshold: keep marker; lid-watch re-suspends.
     fi
     ;;
 esac

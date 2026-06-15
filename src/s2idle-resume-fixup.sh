@@ -94,32 +94,21 @@ case "${1:-}/${2:-}" in
       echo 0 > "$RTC_WAKEALARM" 2>/dev/null || true
     fi
 
-    # Unblank the framebuffer immediately on wake — before the modprobe
-    # below, which can block up to 15 s.  On Z13 the keyboard IS the lid, so
-    # lid-open generates no key event and DPMS stays off without an explicit
-    # unblank.  Do NOT touch /sys/class/drm/*/dpms: KWin owns the DRM device
-    # on Wayland; writing DPMS sysfs while KWin holds the device causes
-    # atomic-commit EBUSY → black screen.  Same pattern as 95-resume-hook.sh.
+    # Display recovery — must happen BEFORE the modprobe below, which can
+    # block up to 15 s.  On Z13 the keyboard IS the lid; lid-open generates
+    # an ACPI lid-switch event but NOT a key event, so KDE's DPMS stays off.
+    # The user sees a black screen and hard-resets before modprobe finishes if
+    # display recovery comes after it (confirmed 2026-06-15).
+    #
+    # Step 1: framebuffer unblank — safe kernel-level unblank, same pattern as
+    # 95-resume-hook.sh.  Do NOT write /sys/class/drm/*/dpms: KWin owns the
+    # DRM device on Wayland; writing DPMS sysfs while KWin holds it causes
+    # atomic-commit EBUSY → black screen.
     ( for f in /sys/class/graphics/*/blank; do [ -w "$f" ] && echo 0 > "$f" 2>/dev/null || true; done ) 2>/dev/null || true
-
-    # Reload mt7925e if we unloaded it in the pre hook.
-    # timeout 15: a page_pool zombie left from the pre-hook unload (one page
-    # still in-flight in hardware DMA at module removal time) can cause
-    # modprobe to block indefinitely — confirmed 2026-06-13 where the hook
-    # hung ~80 s until a hard reset, preventing the long-sleep hibernate gate
-    # from ever firing.  Cap it; WiFi reconnects via NM on the next boot if
-    # needed.
-    if [ -f "$MT_UNLOADED_FLAG" ]; then
-      rm -f "$MT_UNLOADED_FLAG"
-      timeout 15 modprobe mt7925e 2>/dev/null \
-        && echo "s2idle-resume-fixup: mt7925e reloaded" \
-        || echo "s2idle-resume-fixup: mt7925e reload timed-out/failed — WiFi may be down"
-    fi
-
-    # Tell KDE that user activity occurred so it re-enables DPMS outputs.
-    # On Z13 the keyboard IS the lid; attaching it generates an ACPI lid
-    # switch event (not a key event), so KDE's DPMS never wakes from the
-    # keyboard-attach alone.  SimulateUserActivity is the cleanest fix.
+    #
+    # Step 2: SimulateUserActivity via D-Bus — tells KDE to re-enable DPMS
+    # outputs.  This is the canonical Plasma way; framebuffer unblank alone
+    # does not wake KWin's output pipeline on Wayland.
     _uid=$(id -u gunther 2>/dev/null || echo "")
     if [ -n "$_uid" ]; then
       _xdg="/run/user/$_uid"
@@ -136,6 +125,20 @@ case "${1:-}/${2:-}" in
           && echo "s2idle-resume-fixup: SimulateUserActivity sent (DPMS wake)" \
           || true
       fi
+    fi
+
+    # Reload mt7925e if we unloaded it in the pre hook.
+    # timeout 15: a page_pool zombie left from the pre-hook unload (one page
+    # still in-flight in hardware DMA at module removal time) can cause
+    # modprobe to block indefinitely — confirmed 2026-06-13 where the hook
+    # hung ~80 s until a hard reset, preventing the long-sleep hibernate gate
+    # from ever firing.  Cap it; WiFi reconnects via NM on the next boot if
+    # needed.
+    if [ -f "$MT_UNLOADED_FLAG" ]; then
+      rm -f "$MT_UNLOADED_FLAG"
+      timeout 15 modprobe mt7925e 2>/dev/null \
+        && echo "s2idle-resume-fixup: mt7925e reloaded" \
+        || echo "s2idle-resume-fixup: mt7925e reload timed-out/failed — WiFi may be down"
     fi
 
     # Re-trigger uevents for all power_supply devices so that UPower and

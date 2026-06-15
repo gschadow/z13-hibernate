@@ -68,4 +68,15 @@ echo "s2idle-wakeup: pm_debug_messages=1 (diagnostic)"
 echo 1 > /sys/power/pm_print_times
 echo "s2idle-wakeup: pm_print_times=1 (diagnostic)"
 
+# Suppress asus_wmi "Unknown key code 0xe9" spam.
+# The keyboard-cover sensor sends WMI notification 0xe9 at ~1 Hz while the
+# lid is closed (30 K+ journal entries per overnight sleep).  The event has
+# no handler in asus_nb_wmi on this platform — it is harmless but floods
+# the journal and obscures useful PM messages.  Silence it via dynamic debug.
+if [ -w /sys/kernel/debug/dynamic_debug/control ]; then
+  echo 'format "Unknown key code" -p' > /sys/kernel/debug/dynamic_debug/control 2>/dev/null \
+    && echo "s2idle-wakeup: suppressed asus_wmi 'Unknown key code' spam (0xe9)" \
+    || true
+fi
+
 echo "s2idle-wakeup: configuration applied"

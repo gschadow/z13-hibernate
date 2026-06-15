@@ -56,8 +56,8 @@ AMD laptops) on Arch-based Linux (CachyOS, stock Arch, etc.).
   S4 transition skips the system-sleep hibernate prep hooks (no WiFi unload, no
   VBox handling) and hangs — it is explicitly disallowed in `sleep.conf.d`.
   Instead, every s2idle resume checks the battery and schedules a full,
-  properly-prepped S4 hibernate when discharging at ≤ 10%.  After 3 h of total
-  sleep a hibernate is also scheduled unconditionally (see WiFi hang below).
+  properly-prepped S4 hibernate when discharging at ≤ 10%.  After 1 h of total
+  sleep a hibernate is also scheduled on autonomous wake (see WiFi hang below).
 
 - **WiFi driver hang during device-suspend (s2idle)** — after many hours of
   runtime `mt7925e`'s firmware accumulates state that causes `wiphy_suspend()`
@@ -68,9 +68,12 @@ AMD laptops) on Arch-based Linux (CachyOS, stock Arch, etc.).
   Fixed in `50-s2idle-resume-fixup.sh`: unload `mt7925e` before sleep, reload
   on wake with `timeout 15` (adds ~3 s to suspend entry; WiFi reconnects via
   NetworkManager).  A long-sleep gate triggers a full S4 hibernate when the
-  machine wakes after ≥ 3 h total s2idle.  (An RTC alarm is also armed but
-  confirmed ineffective on this platform: the RTC has no ACPI wakeup entry so
-  the alarm fires a 376 μs kernel-internal interrupt only — no userspace thaw.)
+  machine wakes autonomously after ≥ 1 h total s2idle (lid still closed).  The
+  autonomous wake is delivered by a `systemd-run --property=WakeSystem=yes`
+  timer using `CLOCK_REALTIME_ALARM` / alarmtimer — confirmed working on
+  GZ302EA (2026-06-15).  The raw RTC sysfs wakealarm is armed too but is
+  confirmed ineffective on this platform: the RTC has no ACPI S0 wakeup entry
+  and fires only a ~200 μs kernel-internal interrupt, never thawing userspace.
 
 - **Lid bounce hard-wedge** — the lid is the detachable keyboard cover, so
   accidental close + instant reopen is a normal event.  The reopen lands as a
@@ -97,7 +100,7 @@ AMD laptops) on Arch-based Linux (CachyOS, stock Arch, etc.).
 | `src/post-resume-hook.sh` | `/usr/lib/z13-hibernate/post-resume-hook.sh` | T+15 s after resume: retries compositor resume, restarts GPU services, final LED |
 | `src/hibernate-hook.sh` | `/usr/lib/systemd/system-sleep/05-hibernate-hook.sh` | Before image write: LZ4, 12 threads, Performance EPP, WiFi unload, VBox save+unload, shutdown mode |
 | `src/resume-hook.sh` | `/usr/lib/systemd/system-sleep/95-resume-hook.sh` | On resume: early compositor resume, WiFi clean reload, schedule post-resume |
-| `src/s2idle-resume-fixup.sh` | `/usr/lib/systemd/system-sleep/50-s2idle-resume-fixup.sh` | Pre-suspend 2 s settle; on every s2idle wake: re-trigger power_supply uevents (ASUS EC AC-status bug) + hibernate at ≤ 10% battery discharging |
+| `src/s2idle-resume-fixup.sh` | `/usr/lib/systemd/system-sleep/50-s2idle-resume-fixup.sh` | Pre-suspend: 2 s settle, arm WakeSystem=yes timer for 1 h, unload mt7925e. Post-wake: display recovery, reload mt7925e, re-trigger power_supply uevents, hibernate at ≤ 10% battery or after ≥ 1 h autonomous wake (lid closed) |
 | `src/s2idle-wakeup-config.sh` | `/usr/lib/z13-hibernate/s2idle-wakeup-config.sh` | At boot: disable spurious ACPI/USB wakeup sources, set `pm_async=0` |
 | `src/cstate-hold.sh` | `/usr/lib/z13-hibernate/cstate-hold.sh` | Transient QoS holder: no deep C-states during hibernate+restore (lost-IPI deadlock workaround) |
 | `src/lid-watch.sh` | `/usr/lib/z13-hibernate/lid-watch.sh` | Debounced lid handling: suspend only after 3 s sustained close |
@@ -245,7 +248,9 @@ lid close  →  z13-lid-watch: 3 s debounce
               50-s2idle-resume-fixup.sh  pre suspend:
                 • 2 s settle (lid EC event drain)
                 • record sleep-session start (first entry only)
-                • set RTC alarm for 3 h (harmless on this hw; see WiFi note)
+                • set RTC sysfs alarm for 1 h (harmless; S0 ineffective on this hw)
+                • schedule WakeSystem=yes timer for 1 h (CLOCK_REALTIME_ALARM —
+                  confirmed S0 wakeup source on GZ302EA; 2026-06-15)
                 • bring wlp194s0 down + 3 s drain (reduces page_pool zombies)
                 • modprobe -r mt7925e  (bypasses wiphy_suspend() hang)
               (machine sleeps in s2idle)
@@ -260,8 +265,10 @@ any wake   →  50-s2idle-resume-fixup.sh  post suspend:
                   (fixes ASUS EC AC-status misreport → prevents spurious UPower action)
                 • Battery discharging at ≤ 10% → schedule full S4 hibernate
                   (with all prep hooks — this replaces SuspendThenHibernate)
-                • Slept ≥ 3 h total → set z13-hibernate-pending flag,
-                  schedule hibernate in 5 s (lid-watch stands down on flag)
+                • Autonomous wake (WakeSystem=yes timer) + lid still closed +
+                  slept ≥ 1 h → set z13-hibernate-pending flag, schedule
+                  hibernate in 5 s (lid-watch stands down on flag)
+                • Lid opened → resume normally, never hibernate on lid-open
               z13-lid-watch (if lid still closed): re-suspends after 3 s
                 unless z13-hibernate-pending is set → skips to let hibernate win
 ```

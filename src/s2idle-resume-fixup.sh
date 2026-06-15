@@ -36,9 +36,8 @@
 #   8. Long-sleep gate — if an autonomous wake occurs while the lid is STILL
 #      CLOSED after >= MAX_S2IDLE_SEC, hibernate.  Lid-open always resumes
 #      normally; the gate must never fire on user lid-open (bad UX confirmed
-#      2026-06-15).  Currently no S0 wakeup source is available on this
-#      platform (RTC only wakes from S4); gate is future-proof for when one
-#      is found.
+#      2026-06-15).  The WakeSystem=yes timer (item 3 above) is the working
+#      S0 wakeup source; RTC sysfs only wakes from S4 on this platform.
 #
 # Not needed for S4 hibernate (handled by 05-hibernate-hook.sh /
 # 95-resume-hook.sh which have their own WiFi and recovery logic).
@@ -79,6 +78,7 @@ case "${1:-}/${2:-}" in
       # fires, sees lid=closed + elapsed >= threshold, and hibernates.
       # Cancelled in the post hook so a user lid-open cleans it up.
       systemctl stop z13-s2idle-wake-alarm.timer 2>/dev/null || true
+      systemctl reset-failed z13-s2idle-wake-alarm.timer z13-s2idle-wake-alarm.service 2>/dev/null || true
       systemd-run --no-block \
         --on-active="${MAX_S2IDLE_SEC}s" \
         --property=WakeSystem=yes \

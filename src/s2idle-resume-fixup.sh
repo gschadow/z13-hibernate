@@ -48,6 +48,7 @@ SLEEP_SESSION_START=/run/z13-sleep-session-start
 MT_UNLOADED_FLAG=/run/z13-s2idle-mt-unloaded
 RTC_WAKEALARM=/sys/class/rtc/rtc0/wakealarm
 HIB_PENDING=/run/z13-hibernate-pending
+WAKE_ALARM_UNIT=/run/z13-wake-alarm-unit   # stores the current timer's unit name
 MAX_S2IDLE_SEC=3600   # 1 hour: hibernate threshold (only on auto-wake, not lid-open)
 _wifi_if=wlp194s0
 
@@ -77,15 +78,23 @@ case "${1:-}/${2:-}" in
       # If successful the machine wakes in MAX_S2IDLE_SEC, our post hook
       # fires, sees lid=closed + elapsed >= threshold, and hibernates.
       # Cancelled in the post hook so a user lid-open cleans it up.
-      systemctl stop z13-s2idle-wake-alarm.timer 2>/dev/null || true
-      systemctl reset-failed z13-s2idle-wake-alarm.timer z13-s2idle-wake-alarm.service 2>/dev/null || true
+      #
+      # Unit name includes the epoch so each sleep cycle gets a unique name.
+      # Reusing the same unit name across sleep cycles fails: after the timer
+      # fires and completes, the transient unit remains in inactive/dead state
+      # in systemd's memory; systemd-run refuses to create another unit with
+      # the same name until GC runs, causing a WARNING and leaving the machine
+      # with no autonomous wakeup (confirmed 2026-06-18 failure: slept 11 h).
+      _prev_alarm=$(cat "$WAKE_ALARM_UNIT" 2>/dev/null || true)
+      [ -n "$_prev_alarm" ] && systemctl stop "$_prev_alarm" 2>/dev/null || true
+      _alarm_unit="z13-s2idle-wake-$(date +%s)"
       systemd-run --no-block \
         --on-active="${MAX_S2IDLE_SEC}s" \
         --property=WakeSystem=yes \
-        --unit=z13-s2idle-wake-alarm \
+        --unit="$_alarm_unit" \
         -- /bin/true 2>/dev/null \
-        && echo "s2idle-resume-fixup: z13-s2idle-wake-alarm set for ${MAX_S2IDLE_SEC}s (WakeSystem=yes)" \
-        || echo "s2idle-resume-fixup: WARNING: z13-s2idle-wake-alarm scheduling failed"
+        && { echo "$_alarm_unit" > "$WAKE_ALARM_UNIT"; echo "s2idle-resume-fixup: $_alarm_unit set for ${MAX_S2IDLE_SEC}s (WakeSystem=yes)"; } \
+        || echo "s2idle-resume-fixup: WARNING: WakeSystem alarm scheduling failed — machine may sleep indefinitely"
 
       # Bring the WiFi interface down and drain before unloading.
       # 3 s: 1 s was not enough — a page still in-flight at the DMA level
@@ -108,7 +117,11 @@ case "${1:-}/${2:-}" in
     if [ -w "$RTC_WAKEALARM" ]; then
       echo 0 > "$RTC_WAKEALARM" 2>/dev/null || true
     fi
-    systemctl stop z13-s2idle-wake-alarm.timer 2>/dev/null || true
+    _prev_alarm=$(cat "$WAKE_ALARM_UNIT" 2>/dev/null || true)
+    if [ -n "$_prev_alarm" ]; then
+      systemctl stop "$_prev_alarm" 2>/dev/null || true
+      rm -f "$WAKE_ALARM_UNIT"
+    fi
 
     # Display recovery — must happen BEFORE the modprobe below, which can
     # block up to 15 s.  On Z13 the keyboard IS the lid; lid-open generates

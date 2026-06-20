@@ -152,6 +152,14 @@ stop_and_record_busy() {
   # The only real blocker is GPU compute holders (DRM render / ROCm KFD fds).
   kmsg "common: quiescing GPU compute holders (up to ${ncolors} attempts)..."
 
+  # Grace period: number of initial attempts where we wait WITHOUT killing anything.
+  # After KWin compositor suspend, the GPU needs a few seconds to drain display
+  # pipeline fences.  Browsers and terminals that are merely idle (holding a DRM
+  # render fd but not actively computing) will reach 0% GPU within this window and
+  # will not be touched.  Only processes that keep the GPU genuinely busy past the
+  # grace period are killed.  3 attempts × 3 s = 9 s of patience before any SIGTERM.
+  local GRACE_ATTEMPTS=3
+
   local attempt handled_pids="" last_count=0 no_progress=0
   for attempt in $(seq 1 ${ncolors}); do
     asusctl leds set med 2>/dev/null || true
@@ -175,6 +183,14 @@ stop_and_record_busy() {
       return 0
     fi
 
+    # Grace period: just wait — idle browsers/terminals will drain the GPU naturally.
+    if [ "$attempt" -le "$GRACE_ATTEMPTS" ]; then
+      kmsg "common: attempt $attempt: GPU ${gpu_busy:-0}% busy — grace period, waiting 3s (no action)"
+      sleep 3
+      continue
+    fi
+
+    # Past grace period: GPU is stubbornly busy.  Start stopping compute holders.
     # Act on any holder we have not yet signalled this session
     for pid in $gpu_pids; do
       echo " $handled_pids " | grep -q " $pid " && continue

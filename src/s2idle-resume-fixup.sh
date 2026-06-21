@@ -90,7 +90,7 @@ case "${1:-}/${2:-}" in
       _alarm_unit="z13-s2idle-wake-$(date +%s)"
       systemd-run --no-block \
         --on-active="${MAX_S2IDLE_SEC}s" \
-        --property=WakeSystem=yes \
+        --timer-property=WakeSystem=yes \
         --unit="$_alarm_unit" \
         -- /bin/true 2>/dev/null \
         && { echo "$_alarm_unit" > "$WAKE_ALARM_UNIT"; echo "s2idle-resume-fixup: $_alarm_unit set for ${MAX_S2IDLE_SEC}s (WakeSystem=yes)"; } \

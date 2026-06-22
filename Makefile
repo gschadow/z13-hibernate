@@ -25,6 +25,7 @@ install:
 	install -m 755 src/s2idle-wakeup-config.sh  $(DESTDIR)$(PREFIX)/lib/z13-hibernate/s2idle-wakeup-config.sh
 	install -m 755 src/cstate-hold.sh           $(DESTDIR)$(PREFIX)/lib/z13-hibernate/cstate-hold.sh
 	install -m 755 src/lid-watch.sh             $(DESTDIR)$(PREFIX)/lib/z13-hibernate/lid-watch.sh
+	install -m 755 src/s2idle-auto-hib.sh       $(DESTDIR)$(PREFIX)/lib/z13-hibernate/s2idle-auto-hib.sh
 
 	# systemd-sleep hooks (ordering via numeric prefix)
 	install -d $(DESTDIR)$(PREFIX)/lib/systemd/system-sleep
@@ -100,6 +101,7 @@ uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/lib/z13-hibernate/s2idle-wakeup-config.sh
 	rm -f $(DESTDIR)$(PREFIX)/lib/z13-hibernate/cstate-hold.sh
 	rm -f $(DESTDIR)$(PREFIX)/lib/z13-hibernate/lid-watch.sh
+	rm -f $(DESTDIR)$(PREFIX)/lib/z13-hibernate/s2idle-auto-hib.sh
 	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-s2idle-wakeup.service
 	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-lid-watch.service
 	-rmdir $(DESTDIR)$(PREFIX)/lib/z13-hibernate 2>/dev/null || true

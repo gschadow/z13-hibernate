@@ -92,7 +92,7 @@ case "${1:-}/${2:-}" in
         --on-active="${MAX_S2IDLE_SEC}s" \
         --timer-property=WakeSystem=yes \
         --unit="$_alarm_unit" \
-        -- /bin/true 2>/dev/null \
+        -- /usr/lib/z13-hibernate/s2idle-auto-hib.sh 2>/dev/null \
         && { echo "$_alarm_unit" > "$WAKE_ALARM_UNIT"; echo "s2idle-resume-fixup: $_alarm_unit set for ${MAX_S2IDLE_SEC}s (WakeSystem=yes)"; } \
         || echo "s2idle-resume-fixup: WARNING: WakeSystem alarm scheduling failed — machine may sleep indefinitely"
 
@@ -157,17 +157,17 @@ case "${1:-}/${2:-}" in
     fi
 
     # Reload mt7925e if we unloaded it in the pre hook.
-    # timeout 15: a page_pool zombie left from the pre-hook unload (one page
-    # still in-flight in hardware DMA at module removal time) can cause
-    # modprobe to block indefinitely — confirmed 2026-06-13 where the hook
-    # hung ~80 s until a hard reset, preventing the long-sleep hibernate gate
-    # from ever firing.  Cap it; WiFi reconnects via NM on the next boot if
-    # needed.
+    # Backgrounded: a page_pool zombie (one DMA page still in-flight at
+    # module removal time) causes modprobe to block in D-state indefinitely,
+    # even past timeout 15.  Blocking here delays the hibernate gate long
+    # enough for lid-watch to re-suspend before HIB_PENDING is set.
+    # Background it so the gate fires immediately; the modprobe finishes
+    # (or is included frozen in the hibernate image) without blocking us.
     if [ -f "$MT_UNLOADED_FLAG" ]; then
       rm -f "$MT_UNLOADED_FLAG"
-      timeout 15 modprobe mt7925e 2>/dev/null \
-        && echo "s2idle-resume-fixup: mt7925e reloaded" \
-        || echo "s2idle-resume-fixup: mt7925e reload timed-out/failed — WiFi may be down"
+      ( timeout 15 modprobe mt7925e 2>/dev/null \
+          && echo "s2idle-resume-fixup: mt7925e reloaded" \
+          || echo "s2idle-resume-fixup: mt7925e reload timed-out/failed — WiFi may be down" ) &
     fi
 
     # Re-trigger uevents for all power_supply devices so that UPower and
@@ -207,12 +207,19 @@ case "${1:-}/${2:-}" in
 
       if [ "$lid_state" = "closed" ] && [ "$elapsed" -ge "$MAX_S2IDLE_SEC" ]; then
         # Autonomous wake, lid still closed, slept long enough → hibernate.
-        echo "s2idle-resume-fixup: autonomous wake after ${elapsed}s, lid closed — scheduling hibernate"
-        rm -f "$SLEEP_SESSION_START"
-        touch "$HIB_PENDING"
-        systemd-run --on-active=5s --unit=z13-long-sleep-hibernate \
-          bash -c "systemctl hibernate; rm -f $HIB_PENDING" \
-          || rm -f "$HIB_PENDING"
+        # s2idle-auto-hib.sh (run by the WakeSystem timer unit) may have already
+        # set HIB_PENDING and scheduled z13-long-sleep-hibernate; skip if so.
+        if [ -f "$HIB_PENDING" ]; then
+          echo "s2idle-resume-fixup: hibernate already pending (from WakeSystem timer) — skipping duplicate"
+          rm -f "$SLEEP_SESSION_START"
+        else
+          echo "s2idle-resume-fixup: autonomous wake after ${elapsed}s, lid closed — scheduling hibernate"
+          rm -f "$SLEEP_SESSION_START"
+          touch "$HIB_PENDING"
+          systemd-run --on-active=5s --unit=z13-long-sleep-hibernate \
+            bash -c "systemctl hibernate; rm -f $HIB_PENDING" \
+            || rm -f "$HIB_PENDING"
+        fi
       elif [ "$lid_state" = "open" ]; then
         # User opened the lid — always resume normally, never hibernate.
         echo "s2idle-resume-fixup: lid opened after ${elapsed}s — resuming normally"

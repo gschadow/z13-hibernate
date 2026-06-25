@@ -47,9 +47,17 @@ while sleep "$POLL_SEC"; do
         continue
       fi
       closed_since=""
-      echo "lid-watch: lid closed >= ${DEBOUNCE_SEC}s — suspending"
-      systemctl suspend || echo "lid-watch: suspend request failed (already sleeping?)"
-      # The loop is frozen during s2idle; this just skips the moments
+      # On battery: hibernate directly — avoids the unreliable s2idle→hibernate
+      # transition and prevents battery drain if AC is later removed mid-sleep.
+      bat_status=$(cat /sys/class/power_supply/BAT0/status 2>/dev/null || echo "Unknown")
+      if [ "$bat_status" = "Discharging" ]; then
+        echo "lid-watch: lid closed >= ${DEBOUNCE_SEC}s, on battery — hibernating"
+        systemctl hibernate || echo "lid-watch: hibernate request failed"
+      else
+        echo "lid-watch: lid closed >= ${DEBOUNCE_SEC}s — suspending"
+        systemctl suspend || echo "lid-watch: suspend request failed (already sleeping?)"
+      fi
+      # The loop is frozen during sleep; this just skips the moments
       # between the request and the actual freeze.
       sleep 5
     fi

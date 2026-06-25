@@ -123,36 +123,40 @@ case "${1:-}/${2:-}" in
       rm -f "$WAKE_ALARM_UNIT"
     fi
 
-    # Display recovery — must happen BEFORE the modprobe below, which can
-    # block up to 15 s.  On Z13 the keyboard IS the lid; lid-open generates
-    # an ACPI lid-switch event but NOT a key event, so KDE's DPMS stays off.
-    # The user sees a black screen and hard-resets before modprobe finishes if
-    # display recovery comes after it (confirmed 2026-06-15).
-    #
-    # Step 1: framebuffer unblank — safe kernel-level unblank, same pattern as
-    # 95-resume-hook.sh.  Do NOT write /sys/class/drm/*/dpms: KWin owns the
-    # DRM device on Wayland; writing DPMS sysfs while KWin holds it causes
-    # atomic-commit EBUSY → black screen.
-    ( for f in /sys/class/graphics/*/blank; do [ -w "$f" ] && echo 0 > "$f" 2>/dev/null || true; done ) 2>/dev/null || true
-    #
-    # Step 2: SimulateUserActivity via D-Bus — tells KDE to re-enable DPMS
-    # outputs.  This is the canonical Plasma way; framebuffer unblank alone
-    # does not wake KWin's output pipeline on Wayland.
-    _uid=$(id -u gunther 2>/dev/null || echo "")
-    if [ -n "$_uid" ]; then
-      _xdg="/run/user/$_uid"
-      _wl=""
-      for _w in wayland-0 wayland-1 wayland-2; do
-        [ -S "$_xdg/$_w" ] && _wl="$_w" && break
-      done
-      if [ -n "$_wl" ]; then
-        sudo -u gunther env \
-          XDG_RUNTIME_DIR="$_xdg" \
-          DBUS_SESSION_BUS_ADDRESS="unix:path=$_xdg/bus" \
-          WAYLAND_DISPLAY="$_wl" \
-          qdbus org.kde.ScreenSaver /ScreenSaver SimulateUserActivity 2>/dev/null \
-          && echo "s2idle-resume-fixup: SimulateUserActivity sent (DPMS wake)" \
-          || true
+    # Display recovery — only on lid-open wakes.  Skip for autonomous wakes
+    # (lid still closed → going to hibernate): qdbus SimulateUserActivity can
+    # block for 25 s when KDE is unresponsive after a long sleep, and the
+    # hibernate timer (15 s) would fire before the post hook finishes, causing
+    # systemd to refuse hibernate with "Action suspend already in progress"
+    # (confirmed 2026-06-25).  On Z13 the keyboard IS the lid; lid-open
+    # generates an ACPI lid-switch event but NOT a key event, so KDE's DPMS
+    # stays off.  The user sees a black screen and hard-resets if display
+    # recovery is skipped when they actually open the lid (confirmed 2026-06-15).
+    _lid_now=$(awk '{print $2}' /proc/acpi/button/lid/LID/state 2>/dev/null || echo open)
+    if [ "$_lid_now" = "open" ]; then
+      # Step 1: framebuffer unblank — safe kernel-level unblank.  Do NOT write
+      # /sys/class/drm/*/dpms: KWin owns the DRM device on Wayland; writing DPMS
+      # sysfs while KWin holds it causes atomic-commit EBUSY → black screen.
+      ( for f in /sys/class/graphics/*/blank; do [ -w "$f" ] && echo 0 > "$f" 2>/dev/null || true; done ) 2>/dev/null || true
+      # Step 2: SimulateUserActivity via D-Bus — tells KDE to re-enable DPMS
+      # outputs.  Framebuffer unblank alone does not wake KWin's output pipeline
+      # on Wayland.  Timeout 10 s: cap a hung qdbus to prevent blocking the gate.
+      _uid=$(id -u gunther 2>/dev/null || echo "")
+      if [ -n "$_uid" ]; then
+        _xdg="/run/user/$_uid"
+        _wl=""
+        for _w in wayland-0 wayland-1 wayland-2; do
+          [ -S "$_xdg/$_w" ] && _wl="$_w" && break
+        done
+        if [ -n "$_wl" ]; then
+          timeout 10 sudo -u gunther env \
+            XDG_RUNTIME_DIR="$_xdg" \
+            DBUS_SESSION_BUS_ADDRESS="unix:path=$_xdg/bus" \
+            WAYLAND_DISPLAY="$_wl" \
+            qdbus org.kde.ScreenSaver /ScreenSaver SimulateUserActivity 2>/dev/null \
+            && echo "s2idle-resume-fixup: SimulateUserActivity sent (DPMS wake)" \
+            || true
+        fi
       fi
     fi
 
@@ -216,7 +220,7 @@ case "${1:-}/${2:-}" in
           echo "s2idle-resume-fixup: autonomous wake after ${elapsed}s, lid closed — scheduling hibernate"
           rm -f "$SLEEP_SESSION_START"
           touch "$HIB_PENDING"
-          systemd-run --on-active=5s --unit=z13-long-sleep-hibernate \
+          systemd-run --on-active=15s --unit=z13-long-sleep-hibernate \
             bash -c "systemctl hibernate; rm -f $HIB_PENDING" \
             || rm -f "$HIB_PENDING"
         fi

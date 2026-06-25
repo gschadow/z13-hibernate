@@ -21,6 +21,6 @@ elapsed=$(( $(date +%s) - session_start ))
 echo "s2idle-auto-hib: autonomous wake after ${elapsed}s, lid closed — scheduling hibernate"
 rm -f "$SLEEP_SESSION_START"
 touch "$HIB_PENDING"
-systemd-run --on-active=5s --unit=z13-long-sleep-hibernate \
+systemd-run --on-active=15s --unit=z13-long-sleep-hibernate \
     bash -c "systemctl hibernate; rm -f $HIB_PENDING" \
     || { echo "s2idle-auto-hib: WARNING: failed to schedule hibernate"; rm -f "$HIB_PENDING"; }

@@ -1,0 +1,9 @@
+[Unit]
+Description=Z13 load-aware battery hibernate guard
+Documentation=file:///usr/lib/z13-hibernate/z13-battery-guard.sh
+# Only run when on battery; skip silently on AC.
+ConditionACPower=no
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/z13-hibernate/z13-battery-guard.sh

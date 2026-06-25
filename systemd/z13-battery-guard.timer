@@ -1,0 +1,12 @@
+[Unit]
+Description=Z13 load-aware battery hibernate guard — check every 5 min on battery
+Documentation=file:///usr/lib/z13-hibernate/z13-battery-guard.sh
+
+[Timer]
+# First check 10 min after boot (give services time to settle).
+OnBootSec=10min
+# Re-check every 5 min.  On AC the service exits immediately (ConditionACPower=no).
+OnUnitActiveSec=5min
+
+[Install]
+WantedBy=timers.target

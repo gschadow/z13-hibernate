@@ -80,11 +80,18 @@ deploy: install
 	systemctl enable z13-hibernate-boot-cleanup.service
 	systemctl enable --now z13-s2idle-wakeup.service
 	systemctl enable --now z13-lid-watch.service
-	# PowerDevil must not act on the raw lid: z13-lid-watch owns it (3s
-	# debounce; raw lid events race s2idle on this machine). 0 = Do nothing.
+	# PowerDevil lid: z13-lid-watch owns lid events (3s debounce; raw lid
+	# events race s2idle on this machine). 0 = Do nothing for lid.
 	-sudo -u $(PDUSER) kwriteconfig6 --file powerdevilrc --group AC --group SuspendAndShutdown --key LidAction --notify 0
 	-sudo -u $(PDUSER) kwriteconfig6 --file powerdevilrc --group Battery --group SuspendAndShutdown --key LidAction --notify 0
 	-sudo -u $(PDUSER) kwriteconfig6 --file powerdevilrc --group LowBattery --group SuspendAndShutdown --key LidAction --notify 0
+	# PowerDevil auto-suspend on battery: use hibernate (2), not the default
+	# sleep (1).  On battery, sleep leaves the machine in warm s2idle with no
+	# visible feedback; if AC was removed mid-session the user sees warm +
+	# black screen and hard-resets, which is indistinguishable from a hang.
+	# AC profile keeps AutoSuspendAction=0 (already set; do nothing on AC).
+	-sudo -u $(PDUSER) kwriteconfig6 --file powerdevilrc --group Battery --group SuspendAndShutdown --key AutoSuspendAction --notify 2
+	-sudo -u $(PDUSER) kwriteconfig6 --file powerdevilrc --group LowBattery --group SuspendAndShutdown --key AutoSuspendAction --notify 2
 	@echo ""
 	@echo "Services enabled. Sleep, lid, and PowerDevil lid policy applied."
 	@echo "Run 'make bootimage' if the initcpio hook or kernel cmdline changed."

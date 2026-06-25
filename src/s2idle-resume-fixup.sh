@@ -49,7 +49,8 @@ MT_UNLOADED_FLAG=/run/z13-s2idle-mt-unloaded
 RTC_WAKEALARM=/sys/class/rtc/rtc0/wakealarm
 HIB_PENDING=/run/z13-hibernate-pending
 WAKE_ALARM_UNIT=/run/z13-wake-alarm-unit   # stores the current timer's unit name
-MAX_S2IDLE_SEC=3600   # 1 hour: hibernate threshold (only on auto-wake, not lid-open)
+MAX_S2IDLE_SEC=3600        # 1 hour: hibernate threshold on AC (lid-closed auto-wake)
+MAX_S2IDLE_SEC_BAT=300     # 5 min: hibernate threshold on battery (any auto-wake)
 _wifi_if=wlp194s0
 
 case "${1:-}/${2:-}" in
@@ -75,9 +76,17 @@ case "${1:-}/${2:-}" in
       # CLOCK_REALTIME_ALARM wake via systemd WakeSystem=yes.
       # Uses the alarmtimer subsystem (separate kernel path from sysfs
       # wakealarm above — may work via rtc-efi or another backend).
-      # If successful the machine wakes in MAX_S2IDLE_SEC, our post hook
-      # fires, sees lid=closed + elapsed >= threshold, and hibernates.
+      # When the alarm fires, s2idle-auto-hib.sh is dispatched by PID 1
+      # (reliable even if systemd-sleep re-enters s2idle in ~200 μs).
       # Cancelled in the post hook so a user lid-open cleans it up.
+      #
+      # Battery-aware timeout: on battery, hibernate after 5 minutes.
+      # On battery, any unattended sleep must resolve quickly — AC removal
+      # can wake+re-enter s2idle silently, leaving the machine warm and
+      # unresponsive indefinitely if the 1-hour alarm is still pending
+      # (confirmed 2026-06-25: machine stuck 20+ min after hotel power cut).
+      # lid-watch already hibernates IMMEDIATELY on battery lid-close, so
+      # this 5-minute path only fires for PowerDevil idle-initiated sleeps.
       #
       # Unit name includes the epoch so each sleep cycle gets a unique name.
       # Reusing the same unit name across sleep cycles fails: after the timer
@@ -85,15 +94,18 @@ case "${1:-}/${2:-}" in
       # in systemd's memory; systemd-run refuses to create another unit with
       # the same name until GC runs, causing a WARNING and leaving the machine
       # with no autonomous wakeup (confirmed 2026-06-18 failure: slept 11 h).
+      _bat_now=$(cat /sys/class/power_supply/BAT0/status 2>/dev/null || echo "Unknown")
+      _alarm_sec="$MAX_S2IDLE_SEC"
+      [ "$_bat_now" = "Discharging" ] && _alarm_sec="$MAX_S2IDLE_SEC_BAT"
       _prev_alarm=$(cat "$WAKE_ALARM_UNIT" 2>/dev/null || true)
       [ -n "$_prev_alarm" ] && systemctl stop "$_prev_alarm" 2>/dev/null || true
       _alarm_unit="z13-s2idle-wake-$(date +%s)"
       systemd-run --no-block \
-        --on-active="${MAX_S2IDLE_SEC}s" \
+        --on-active="${_alarm_sec}s" \
         --timer-property=WakeSystem=yes \
         --unit="$_alarm_unit" \
         -- /usr/lib/z13-hibernate/s2idle-auto-hib.sh 2>/dev/null \
-        && { echo "$_alarm_unit" > "$WAKE_ALARM_UNIT"; echo "s2idle-resume-fixup: $_alarm_unit set for ${MAX_S2IDLE_SEC}s (WakeSystem=yes)"; } \
+        && { echo "$_alarm_unit" > "$WAKE_ALARM_UNIT"; echo "s2idle-resume-fixup: $_alarm_unit set for ${_alarm_sec}s (WakeSystem=yes, bat=$_bat_now)"; } \
         || echo "s2idle-resume-fixup: WARNING: WakeSystem alarm scheduling failed — machine may sleep indefinitely"
 
       # Bring the WiFi interface down and drain before unloading.

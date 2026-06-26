@@ -17,10 +17,16 @@
 #       KDE battery notifications.  Skip — they are managing the situation.
 #       The EMERGENCY_PCT floor still applies.
 #
-#   load1 > LOAD_IDLE_MAX  (nproc × 10%, min 1.5)
+#   load1 > LOAD_IDLE_MAX  (default 1.0, absolute — NOT scaled by nproc)
 #       CPU or disk-IO work in progress (compiler, local inference, DB query).
 #       Load average counts D-state (IO-blocked) processes so disk-heavy jobs
 #       are caught without a separate IO probe.
+#       Load average is an ABSOLUTE count, not a percentage: one thread at
+#       100% CPU contributes 1.0 regardless of how many CPUs the machine has.
+#       Scaling the threshold by nproc would mean 3.2 on a 32-CPU machine —
+#       a single important thread generating load 1.0 would be ignored.
+#       Background system housekeeping (cron, systemd timers, dbus activity)
+#       averages well below 0.5; a real single-threaded job sits at 0.5–1.0+.
 #       NOTE: load average does NOT count network-waiting processes (S state).
 #       A coding agent calling a cloud LLM generates near-zero load even when
 #       active.  The network-bytes check below covers that case.
@@ -59,14 +65,16 @@ LOW_BAT_PCT=15            # hibernate when screen off; skip when user present
 NET_SNAP=/run/z13-bat-net-snap   # persists non-loopback byte count between runs
 NET_BUSY_BYTES=51200      # 50 KB: above this = active network work in progress
 
-# CPU threshold: nproc × 10%, minimum 1.5.
-# Load average is an absolute count (not a percentage), so a fixed threshold
-# like 1.0 is meaningless on a many-core machine: 1.0 on 32 CPUs = 3% CPU.
-# Scaling to 10% of nproc gives 3.2 on a 32-CPU machine, which correctly
-# ignores the typical idle desktop (0.3–0.8) while catching compilers and
-# local AI inference that consume multiple cores.
-_ncpu=$(nproc 2>/dev/null || grep -c '^processor' /proc/cpuinfo 2>/dev/null || echo 4)
-LOAD_IDLE_MAX=$(awk -v n="$_ncpu" 'BEGIN { t=n*0.10; printf "%.1f", (t<1.5)?1.5:t }')
+# CPU threshold: absolute, NOT scaled by nproc.
+# Load average counts runnable + D-state threads as absolute units; one thread
+# at 100% CPU contributes ~1.0 regardless of how many CPUs the machine has.
+# A nproc-scaled threshold (e.g. 32×10% = 3.2 on this machine) would silently
+# ignore a single important thread — a single-threaded job at full speed only
+# generates load ~1.0.  Background system housekeeping (cron, systemd timers,
+# dbus activity) with the screen locked averages well below 0.5; a real working
+# thread sits at 0.5–1.0+.  1.0 is therefore the right minimum: "at least one
+# full CPU thread is doing non-trivial work."
+LOAD_IDLE_MAX=1.0
 
 # ── Gate: only act when discharging ──────────────────────────────────────────
 status=$(cat "$BAT/status" 2>/dev/null || echo Unknown)
@@ -124,7 +132,7 @@ fi
 # ── CPU load check ───────────────────────────────────────────────────────────
 busy=$(awk -v l="$load1" -v t="$LOAD_IDLE_MAX" 'BEGIN { print (l+0 > t+0) ? 1 : 0 }')
 if [ "$busy" = "1" ]; then
-    echo "z13-battery-guard: battery ${capacity}%, load=${load1} > ${LOAD_IDLE_MAX} (${_ncpu} CPUs × 10%) — busy, skipping"
+    echo "z13-battery-guard: battery ${capacity}%, load=${load1} > ${LOAD_IDLE_MAX} — busy, skipping"
     exit 0
 fi
 

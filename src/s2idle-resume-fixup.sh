@@ -161,12 +161,21 @@ case "${1:-}/${2:-}" in
           [ -S "$_xdg/$_w" ] && _wl="$_w" && break
         done
         if [ -n "$_wl" ]; then
-          timeout 10 sudo -u gunther env \
-            XDG_RUNTIME_DIR="$_xdg" \
-            DBUS_SESSION_BUS_ADDRESS="unix:path=$_xdg/bus" \
-            WAYLAND_DISPLAY="$_wl" \
+          _qdbus_env="sudo -u gunther env \
+            XDG_RUNTIME_DIR=$_xdg \
+            DBUS_SESSION_BUS_ADDRESS=unix:path=$_xdg/bus \
+            WAYLAND_DISPLAY=$_wl"
+          timeout 10 $_qdbus_env \
             qdbus org.kde.ScreenSaver /ScreenSaver SimulateUserActivity 2>/dev/null \
             && echo "s2idle-resume-fixup: SimulateUserActivity sent (DPMS wake)" \
+            || true
+          # KWin Wayland occasionally stops processing pointer button events after
+          # resume even though libinput delivers them correctly (Plasma 6.x bug).
+          # reconfigure() re-initialises KWin's input pipeline without the visual
+          # disruption of --replace.  No-op if KWin is healthy; harmless if not.
+          timeout 5 $_qdbus_env \
+            qdbus org.kde.KWin /KWin reconfigure 2>/dev/null \
+            && echo "s2idle-resume-fixup: KWin reconfigure sent (input pipeline refresh)" \
             || true
         fi
       fi

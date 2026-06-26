@@ -24,6 +24,35 @@ restore_screen
 restore_lights_and_profile
 restart_gpu_processes
 
+# Restart KWin after S4 resume to clear dirty amdgpu GPU VM state from the
+# kscreenlocker crash that occurs on every S4 resume (observed every resume,
+# documented in gate-hook.sh).  Without this, the session accumulates cascading
+# "atomic commit failed: Device or resource busy" errors; the next hibernate's
+# compositor suspend call fails; GPU processes are killed with "non-zero when fini"
+# VM memory; and the amdgpu PM_HIBERNATION_PREPARE notifier hangs indefinitely at
+# "PM: hibernation: hibernation entry" (confirmed failure log 2026-06-26 05:06).
+# --replace takes over the live compositor slot so display is not lost, only
+# briefly flickered.  This runs AFTER restore_screen so the display is already on.
+_pr_uid=$(id -u gunther 2>/dev/null || echo "")
+if [ -n "$_pr_uid" ]; then
+  _pr_xdg="/run/user/$_pr_uid"
+  _pr_wl=""
+  for _w in wayland-0 wayland-1 wayland-2; do
+    [ -S "$_pr_xdg/$_w" ] && _pr_wl="$_w" && break
+  done
+  if [ -n "$_pr_wl" ]; then
+    sleep 3
+    sudo -u gunther env \
+      XDG_RUNTIME_DIR="$_pr_xdg" \
+      DBUS_SESSION_BUS_ADDRESS="unix:path=$_pr_xdg/bus" \
+      WAYLAND_DISPLAY="$_pr_wl" \
+      kwin_wayland --replace &>/dev/null &
+    kmsg "post-resume: KWin --replace launched (clearing dirty amdgpu VM from kscreenlocker crash)"
+  else
+    kmsg "post-resume: no Wayland socket found — skipping KWin --replace (manual kwin_wayland --replace may be needed)"
+  fi
+fi
+
 # Final "we are done" color
 asusctl leds set high 2>/dev/null || true
 asusctl aura effect static -c 00ff60 2>/dev/null || true

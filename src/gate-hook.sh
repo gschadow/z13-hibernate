@@ -43,10 +43,21 @@ if [ -n "$_hib_uid" ]; then
   done
   if [ -n "$_hib_wl" ]; then
     _hib_env="XDG_RUNTIME_DIR=$_hib_xdg DBUS_SESSION_BUS_ADDRESS=unix:path=$_hib_xdg/bus WAYLAND_DISPLAY=$_hib_wl"
-    sudo -u "$_hib_user" env $_hib_env qdbus org.kde.KWin /Compositor suspend 2>/dev/null \
-      && kmsg "gate: KWin compositor suspended (GPU will drain before PM notifier)" \
-      || kmsg "gate: KWin compositor suspend skipped/failed (non-fatal)"
-    sleep 2
+    if timeout 5 sudo -u "$_hib_user" env $_hib_env qdbus org.kde.KWin /Compositor suspend 2>/dev/null; then
+      kmsg "gate: KWin compositor suspended (GPU fences will drain before PM notifier)"
+      sleep 2
+    else
+      # Compositor suspend failed.  This typically means the session has dirty amdgpu
+      # GPU VM state from kscreenlocker crashing on the previous S4 resume — visible as
+      # cascading "atomic commit failed: Device or resource busy" in the KWin log.
+      # The post-resume-hook's kwin_wayland --replace should have cleaned this up.
+      # If we're here anyway, the GPU still has unflushed fences.  Extend the wait
+      # to give amdgpu more time to drain naturally before the PM notifier fires.
+      # NOTE: if this hang repeats, the post-resume-hook's --replace may not have run
+      # (no Wayland socket at post-resume time, or systemd timer missed).
+      kmsg "gate: KWin compositor suspend failed — GPU may have dirty VM; waiting 15s for natural drain"
+      sleep 15
+    fi
   else
     kmsg "gate: no Wayland socket found for $_hib_user, skipping compositor suspend"
   fi

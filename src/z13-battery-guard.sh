@@ -17,17 +17,32 @@
 #       KDE battery notifications.  Skip — they are managing the situation.
 #       The EMERGENCY_PCT floor still applies.
 #
-#   load1 > LOAD_IDLE_MAX (1.0)
-#       System is doing useful work (compiler, AI inference, DB query).
-#       Skip.  The load average includes D-state IO-blocked processes, so
-#       it catches disk-heavy workloads without a separate IO probe.
+#   load1 > LOAD_IDLE_MAX  (nproc × 10%, min 1.5)
+#       CPU or disk-IO work in progress (compiler, local inference, DB query).
+#       Load average counts D-state (IO-blocked) processes so disk-heavy jobs
+#       are caught without a separate IO probe.
+#       NOTE: load average does NOT count network-waiting processes (S state).
+#       A coding agent calling a cloud LLM generates near-zero load even when
+#       active.  The network-bytes check below covers that case.
+#
+#   net_delta > NET_BUSY_BYTES (50 KB) since last run
+#       Non-loopback network bytes transferred since the previous 5-minute
+#       check exceed the threshold.  A single LLM API response is 2–50 KB;
+#       active cloud-model usage easily exceeds 50 KB across five minutes.
+#       Background noise (DNS, NTP, health-checks) is typically < 5 KB/5 min.
+#       Snapshot is stored in NET_SNAP between runs.  Counter resets (reboot,
+#       interface restart) are detected and the network check is skipped for
+#       that cycle.
+#       NOTE: this catches active API calls but misses long wait windows
+#       between calls (e.g., waiting 10+ min for a single slow response).
+#       For those, take an explicit inhibitor (see below).
 #
 #   sleep inhibitor held
 #       Explicit block via systemd-inhibit --what=sleep.  Respect it.
-#       Use for CPU-light network-heavy jobs (LLM API calls, uploads) that
-#       would not raise the load average:
+#       Use for jobs that spend most of their time waiting with neither CPU
+#       nor network activity visible in a 5-minute window:
 #         systemd-inhibit --what=sleep --who="myjob" \
-#                         --why="LLM API" --mode=block ./job
+#                         --why="waiting on slow LLM" --mode=block ./job
 #
 #   otherwise
 #       Genuinely idle on battery.  Hibernate.
@@ -39,15 +54,21 @@
 set -euo pipefail
 
 BAT=/sys/class/power_supply/BAT0
-EMERGENCY_PCT=2      # always hibernate: hardware safety floor
-LOW_BAT_PCT=15       # hibernate when screen off; skip when user present
-# Scale "busy" threshold to actual CPU count.  10% of nproc, minimum 1.5.
-# On a 32-CPU machine this gives 3.2; on a 2-CPU machine the floor of 1.5
-# applies.  Load average already includes D-state (IO-blocked) processes.
+EMERGENCY_PCT=2           # always hibernate: hardware safety floor
+LOW_BAT_PCT=15            # hibernate when screen off; skip when user present
+NET_SNAP=/run/z13-bat-net-snap   # persists non-loopback byte count between runs
+NET_BUSY_BYTES=51200      # 50 KB: above this = active network work in progress
+
+# CPU threshold: nproc × 10%, minimum 1.5.
+# Load average is an absolute count (not a percentage), so a fixed threshold
+# like 1.0 is meaningless on a many-core machine: 1.0 on 32 CPUs = 3% CPU.
+# Scaling to 10% of nproc gives 3.2 on a 32-CPU machine, which correctly
+# ignores the typical idle desktop (0.3–0.8) while catching compilers and
+# local AI inference that consume multiple cores.
 _ncpu=$(nproc 2>/dev/null || grep -c '^processor' /proc/cpuinfo 2>/dev/null || echo 4)
 LOAD_IDLE_MAX=$(awk -v n="$_ncpu" 'BEGIN { t=n*0.10; printf "%.1f", (t<1.5)?1.5:t }')
 
-# Only act when discharging.
+# ── Gate: only act when discharging ──────────────────────────────────────────
 status=$(cat "$BAT/status" 2>/dev/null || echo Unknown)
 if [ "$status" != "Discharging" ]; then
     echo "z13-battery-guard: not discharging (status=$status) — nothing to do"
@@ -70,15 +91,15 @@ fi
 screen_on=no
 while read -r sid _rest; do
     locked=$(loginctl show-session "$sid" --value --property=LockedHint 2>/dev/null || echo yes)
-    idle=$(loginctl show-session "$sid" --value --property=IdleHint   2>/dev/null || echo yes)
+    idle=$(loginctl show-session   "$sid" --value --property=IdleHint   2>/dev/null || echo yes)
     if [ "$locked" = "no" ] && [ "$idle" = "no" ]; then
         screen_on=yes
         break
     fi
 done < <(loginctl list-sessions --no-legend 2>/dev/null)
 
-# Backlight override: if hardware reports all backlights at 0 the display is
-# physically off regardless of what logind thinks.
+# Backlight override: if all backlights report 0 the display is physically off
+# regardless of what logind thinks.
 if [ "$screen_on" = "yes" ]; then
     all_dark=yes
     for bl in /sys/class/backlight/*/actual_brightness; do
@@ -100,13 +121,46 @@ if [ "$capacity" -le "$LOW_BAT_PCT" ]; then
     exit 0
 fi
 
-# ── Above LOW_BAT_PCT: work and inhibitor checks ─────────────────────────────
+# ── CPU load check ───────────────────────────────────────────────────────────
 busy=$(awk -v l="$load1" -v t="$LOAD_IDLE_MAX" 'BEGIN { print (l+0 > t+0) ? 1 : 0 }')
 if [ "$busy" = "1" ]; then
     echo "z13-battery-guard: battery ${capacity}%, load=${load1} > ${LOAD_IDLE_MAX} (${_ncpu} CPUs × 10%) — busy, skipping"
     exit 0
 fi
 
+# ── Network activity check ───────────────────────────────────────────────────
+# Sum all non-loopback RX+TX bytes from /proc/net/dev.
+net_now=$(awk '
+    NR > 2 {
+        gsub(/:/, " ", $1)
+        if ($1 != "lo") sum += $2 + $10
+    }
+    END { print sum+0 }
+' /proc/net/dev)
+
+net_skip=no
+if [ -f "$NET_SNAP" ]; then
+    read -r snap_time snap_bytes < "$NET_SNAP" 2>/dev/null || snap_bytes=0
+    now_time=$(date +%s)
+    # If snapshot is stale (> 15 min) or counter went backwards (interface
+    # reset / reboot), skip the network check this cycle.
+    if [ $(( now_time - ${snap_time:-0} )) -gt 900 ] || [ "$net_now" -lt "$snap_bytes" ] 2>/dev/null; then
+        net_skip=yes
+    else
+        net_delta=$(( net_now - snap_bytes ))
+        if [ "$net_delta" -gt "$NET_BUSY_BYTES" ]; then
+            echo "$(date +%s) $net_now" > "$NET_SNAP"
+            echo "z13-battery-guard: battery ${capacity}%, net_delta=${net_delta}B > ${NET_BUSY_BYTES}B — active network work, skipping"
+            exit 0
+        fi
+    fi
+else
+    net_skip=yes
+fi
+echo "$(date +%s) $net_now" > "$NET_SNAP"
+[ "$net_skip" = "yes" ] && echo "z13-battery-guard: network snapshot initialised — skipping network check this cycle"
+
+# ── Sleep inhibitor check ────────────────────────────────────────────────────
 if systemd-inhibit --list --no-legend 2>/dev/null | grep -qiE '\bsleep\b|\bhibernate\b'; then
     holder=$(systemd-inhibit --list --no-legend 2>/dev/null \
              | awk '/sleep|hibernate/ { print $1; exit }')
@@ -114,5 +168,6 @@ if systemd-inhibit --list --no-legend 2>/dev/null | grep -qiE '\bsleep\b|\bhiber
     exit 0
 fi
 
-echo "z13-battery-guard: battery ${capacity}%, load=${load1} ≤ ${LOAD_IDLE_MAX} (${_ncpu} CPUs × 10%) — idle on battery, hibernating"
+# ── Idle: hibernate ──────────────────────────────────────────────────────────
+echo "z13-battery-guard: battery ${capacity}%, load=${load1}, net_delta=${net_delta:-0}B — idle on battery, hibernating"
 systemctl hibernate

@@ -41,7 +41,11 @@ set -euo pipefail
 BAT=/sys/class/power_supply/BAT0
 EMERGENCY_PCT=2      # always hibernate: hardware safety floor
 LOW_BAT_PCT=15       # hibernate when screen off; skip when user present
-LOAD_IDLE_MAX=1.0    # 1-min load avg; above = busy
+# Scale "busy" threshold to actual CPU count.  10% of nproc, minimum 1.5.
+# On a 32-CPU machine this gives 3.2; on a 2-CPU machine the floor of 1.5
+# applies.  Load average already includes D-state (IO-blocked) processes.
+_ncpu=$(nproc 2>/dev/null || grep -c '^processor' /proc/cpuinfo 2>/dev/null || echo 4)
+LOAD_IDLE_MAX=$(awk -v n="$_ncpu" 'BEGIN { t=n*0.10; printf "%.1f", (t<1.5)?1.5:t }')
 
 # Only act when discharging.
 status=$(cat "$BAT/status" 2>/dev/null || echo Unknown)
@@ -99,7 +103,7 @@ fi
 # ── Above LOW_BAT_PCT: work and inhibitor checks ─────────────────────────────
 busy=$(awk -v l="$load1" -v t="$LOAD_IDLE_MAX" 'BEGIN { print (l+0 > t+0) ? 1 : 0 }')
 if [ "$busy" = "1" ]; then
-    echo "z13-battery-guard: battery ${capacity}%, load=${load1} > ${LOAD_IDLE_MAX} — busy, skipping"
+    echo "z13-battery-guard: battery ${capacity}%, load=${load1} > ${LOAD_IDLE_MAX} (${_ncpu} CPUs × 10%) — busy, skipping"
     exit 0
 fi
 
@@ -110,5 +114,5 @@ if systemd-inhibit --list --no-legend 2>/dev/null | grep -qiE '\bsleep\b|\bhiber
     exit 0
 fi
 
-echo "z13-battery-guard: battery ${capacity}%, load=${load1} — idle on battery, hibernating"
+echo "z13-battery-guard: battery ${capacity}%, load=${load1} ≤ ${LOAD_IDLE_MAX} (${_ncpu} CPUs × 10%) — idle on battery, hibernating"
 systemctl hibernate

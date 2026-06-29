@@ -33,6 +33,11 @@ install:
 	install -m 755 src/resume-hook.sh          $(DESTDIR)$(PREFIX)/lib/systemd/system-sleep/95-resume-hook.sh
 	install -m 755 src/s2idle-resume-fixup.sh  $(DESTDIR)$(PREFIX)/lib/systemd/system-sleep/50-s2idle-resume-fixup.sh
 
+	# GPU / LLM memory tuning (sysctl)
+	install -d $(DESTDIR)/etc/sysctl.d
+	install -m 644 etc/sysctl.d/z13-gpu-memory.conf \
+	               $(DESTDIR)/etc/sysctl.d/z13-gpu-memory.conf
+
 	# systemd drop-in configs (sleep policy + lid switch)
 	install -d $(DESTDIR)/etc/systemd/sleep.conf.d
 	install -m 644 etc/systemd/sleep.conf.d/z13-suspend-then-hibernate.conf \
@@ -90,6 +95,7 @@ deploy: install
 	systemctl enable --now z13-lid-watch.service
 	systemctl enable --now z13-battery-guard.timer
 	systemctl enable --now z13-irq-affinity-kbd.service
+	sysctl -p /etc/sysctl.d/z13-gpu-memory.conf
 	# PowerDevil lid: z13-lid-watch owns lid events (3s debounce; raw lid
 	# events race s2idle on this machine). 0 = Do nothing for lid.
 	-sudo -u $(PDUSER) kwriteconfig6 --file powerdevilrc --group AC --group SuspendAndShutdown --key LidAction --notify 0
@@ -125,6 +131,7 @@ uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-battery-guard.service
 	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-battery-guard.timer
 	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-irq-affinity-kbd.service
+	rm -f $(DESTDIR)/etc/sysctl.d/z13-gpu-memory.conf
 	-rmdir $(DESTDIR)$(PREFIX)/lib/z13-hibernate 2>/dev/null || true
 	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system-sleep/05-hibernate-hook.sh
 	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system-sleep/95-resume-hook.sh

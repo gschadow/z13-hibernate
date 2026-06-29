@@ -11,7 +11,15 @@ GRUB_DISTRIBUTOR="CachyOS"
 # loglevel=7 + no_console_suspend: verbose console during suspend/hibernate
 # phases — needed to see the image-write progress and any errors there.
 GRUB_CMDLINE_LINUX_DEFAULT="loglevel=7 no_console_suspend"
-GRUB_CMDLINE_LINUX="rd.luks.name=ROOT_LUKS_UUID=root rd.luks.name=HIB_LUKS_UUID=hibernate root=/dev/mapper/root resume=/dev/mapper/hibernate zswap.enabled=0 nvme_core.default_ps_max_latency_us=0 amdgpu.runpm=0 amdgpu.gpu_recovery=1 amdgpu.lockup_timeout=10000,10000,10000,10000 amdgpu.noretry=0 amdgpu.dc=1 amdgpu.aspm=0 amdgpu.sg_display=0 transparent_hugepage=always nvme_core.io_timeout=300 pci=pcie_bus_perf efi_pstore.pstore_disable=0"
+GRUB_CMDLINE_LINUX="rd.luks.name=ROOT_LUKS_UUID=root rd.luks.name=HIB_LUKS_UUID=hibernate root=/dev/mapper/root resume=/dev/mapper/hibernate zswap.enabled=0 nvme_core.default_ps_max_latency_us=0 amdgpu.runpm=0 amdgpu.gpu_recovery=1 amdgpu.lockup_timeout=10000,10000,10000,10000 amdgpu.noretry=0 amdgpu.dc=1 amdgpu.aspm=0 amdgpu.sg_display=0 amdgpu.gttsize=92160 transparent_hugepage=always nvme_core.io_timeout=300 pci=pcie_bus_perf efi_pstore.pstore_disable=0"
+
+# amdgpu.gttsize=92160: GTT pool ceiling in MB (90 GB).
+# GTT is the aperture through which the GPU can access system RAM pages beyond
+# its dedicated VRAM.  The value is a lazy ceiling — pages are allocated on
+# demand up to what system RAM allows.  With 96 GB BIOS VRAM and ~30 GB system
+# RAM the effective GTT is ~20 GB (the driver's usable fraction of system RAM),
+# still ~3× the default heuristic (~7.5 GB).  If BIOS VRAM is reduced, a
+# larger GTT becomes available automatically without changing this value.
 
 # efi_pstore.pstore_disable=0: CachyOS builds the EFI pstore backend disabled
 # by default. Enabling it makes a kernel panic during the screen-off phases of

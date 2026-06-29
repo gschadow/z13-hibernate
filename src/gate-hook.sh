@@ -27,12 +27,24 @@ kmsg "gate: kernel=$(uname -r)"
 asusctl leds set med 2>/dev/null || true
 asusctl aura effect static -c 0060ff 2>/dev/null || true
 
+# Stop GPU-heavy services before touching the compositor.
+# A cancelled or recently-completed ollama inference leaves the amdgpu driver with
+# incomplete GPU fences.  If we try to hibernate while those fences are pending, the
+# PM_HIBERNATION_PREPARE notifier hangs indefinitely at "hibernation entry".
+# Stopping the service gives the driver a clean fence-drain window before the
+# compositor suspend and the PM notifier.
+if systemctl is-active --quiet ollama 2>/dev/null; then
+  kmsg "gate: ollama service running — stopping to release GPU memory before hibernate"
+  systemctl stop ollama 2>/dev/null || true
+  sleep 3
+  kmsg "gate: ollama stopped"
+fi
+
 # Suspend KWin compositor before the user.slice freeze.
 # This drains all outstanding GPU fences so the kernel's PM_HIBERNATION_PREPARE notifier
-# (amdgpu) can disable the display pipeline cleanly. Without this, after S4 resume the
-# amdgpu PM notifier can block indefinitely on a stuck atomic commit or fence from the
-# kscreenlocker GPU crash (VM memory stats non-zero when fini) that happens on every
-# S4 resume — causing an infinite hang at "PM: hibernation: hibernation entry".
+# (amdgpu) can disable the display pipeline cleanly.  Dirty amdgpu GPU VM state causes the
+# notifier to hang indefinitely at "PM: hibernation: hibernation entry".  Sources of dirty
+# state: kscreenlocker crash on previous S4 resume, or a cancelled ollama inference job.
 _hib_user=gunther
 _hib_uid=$(id -u "$_hib_user" 2>/dev/null || echo "")
 if [ -n "$_hib_uid" ]; then
@@ -47,16 +59,23 @@ if [ -n "$_hib_uid" ]; then
       kmsg "gate: KWin compositor suspended (GPU fences will drain before PM notifier)"
       sleep 2
     else
-      # Compositor suspend failed.  This typically means the session has dirty amdgpu
-      # GPU VM state from kscreenlocker crashing on the previous S4 resume — visible as
-      # cascading "atomic commit failed: Device or resource busy" in the KWin log.
-      # The post-resume-hook's kwin_wayland --replace should have cleaned this up.
-      # If we're here anyway, the GPU still has unflushed fences.  Extend the wait
-      # to give amdgpu more time to drain naturally before the PM notifier fires.
-      # NOTE: if this hang repeats, the post-resume-hook's --replace may not have run
-      # (no Wayland socket at post-resume time, or systemd timer missed).
-      kmsg "gate: KWin compositor suspend failed — GPU may have dirty VM; waiting 15s for natural drain"
-      sleep 15
+      # Compositor suspend failed — GPU has dirty VM state (cascading "atomic commit failed"
+      # errors visible in KWin log).  Run kwin_wayland --replace to forcefully clear the
+      # dirty amdgpu state, wait for the new instance to settle, then retry.
+      kmsg "gate: compositor suspend failed — running kwin_wayland --replace to clear dirty GPU VM"
+      sudo -u "$_hib_user" env \
+        XDG_RUNTIME_DIR="$_hib_xdg" \
+        DBUS_SESSION_BUS_ADDRESS="unix:path=$_hib_xdg/bus" \
+        WAYLAND_DISPLAY="$_hib_wl" \
+        kwin_wayland --replace &>/dev/null &
+      sleep 8
+      if timeout 5 sudo -u "$_hib_user" env $_hib_env qdbus org.kde.KWin /Compositor suspend 2>/dev/null; then
+        kmsg "gate: compositor suspended after kwin --replace (GPU state cleared)"
+        sleep 2
+      else
+        kmsg "gate: compositor still failed after --replace — waiting 15s more for natural drain"
+        sleep 15
+      fi
     fi
   else
     kmsg "gate: no Wayland socket found for $_hib_user, skipping compositor suspend"

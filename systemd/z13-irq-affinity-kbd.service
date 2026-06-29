@@ -1,0 +1,26 @@
+[Unit]
+Description=Pin Z13 keyboard/touchpad xhci IRQ away from NVMe CPUs
+Documentation=https://github.com/gschadow/z13-hibernate
+DefaultDependencies=no
+After=sysinit.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+# The GZ302EA keyboard+touchpad are on the xhci controller at PCI 0000:c6:00.0.
+# The kernel assigns its MSI-X IRQ to the same CPU as the busiest NVMe queue
+# (both ended up on CPU17) based on PCI topology.  Under heavy I/O (rsync,
+# large file copies), NVMe completions saturate that CPU and HID events from
+# the keyboard and touchpad queue up, causing cursor freezes and key-repeat
+# storms when the CPU finally catches up.
+# CPUs 0-15 carry zero NVMe IRQs (those go to 16-31).  Pinning the xhci IRQ
+# to 0-15 eliminates the competition while still giving the kernel 16 CPUs to
+# balance across.
+ExecStart=/bin/bash -c '\
+  for irq in $(ls /sys/bus/pci/devices/0000:c6:00.0/msi_irqs/ 2>/dev/null); do \
+    echo "0-15" > /proc/irq/$$irq/smp_affinity_list && \
+      echo "z13-irq-affinity-kbd: set xhci IRQ $$irq (kbd/touchpad) to CPUs 0-15" | tee /dev/kmsg 2>/dev/null || true; \
+  done'
+
+[Install]
+WantedBy=sysinit.target

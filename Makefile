@@ -60,6 +60,8 @@ install:
 	               $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-battery-guard.timer
 	install -m 755 src/z13-battery-guard.sh \
 	               $(DESTDIR)$(PREFIX)/lib/z13-hibernate/z13-battery-guard.sh
+	install -m 644 systemd/z13-irq-affinity-kbd.service \
+	               $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-irq-affinity-kbd.service
 
 	# initcpio hook (two search paths: /etc and /usr/lib)
 	install -d $(DESTDIR)/etc/initcpio/hooks $(DESTDIR)/etc/initcpio/install
@@ -87,6 +89,7 @@ deploy: install
 	systemctl enable --now z13-s2idle-wakeup.service
 	systemctl enable --now z13-lid-watch.service
 	systemctl enable --now z13-battery-guard.timer
+	systemctl enable --now z13-irq-affinity-kbd.service
 	# PowerDevil lid: z13-lid-watch owns lid events (3s debounce; raw lid
 	# events race s2idle on this machine). 0 = Do nothing for lid.
 	-sudo -u $(PDUSER) kwriteconfig6 --file powerdevilrc --group AC --group SuspendAndShutdown --key LidAction --notify 0
@@ -121,6 +124,7 @@ uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-lid-watch.service
 	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-battery-guard.service
 	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-battery-guard.timer
+	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-irq-affinity-kbd.service
 	-rmdir $(DESTDIR)$(PREFIX)/lib/z13-hibernate 2>/dev/null || true
 	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system-sleep/05-hibernate-hook.sh
 	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system-sleep/95-resume-hook.sh

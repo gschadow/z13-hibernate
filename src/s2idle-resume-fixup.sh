@@ -28,7 +28,7 @@
 #   3. Reload mt7925e (if we unloaded it) — with timeout 15 to prevent an
 #      indefinite hang from a page_pool zombie left by the pre-hook unload
 #      (confirmed 2026-06-13: blocked ~80 s until hard reset).
-#   4. SimulateUserActivity via qdbus — tells KDE to re-enable DPMS outputs.
+#   4. SimulateUserActivity via qdbus6 — tells KDE to re-enable DPMS outputs.
 #   5. Re-trigger power_supply uevents — ASUS EC misreports AC as disconnected
 #      after s2idle; without this UPower can fire CriticalPowerAction on AC.
 #   6. Log pm_wakeup_irq for spurious-wake diagnosis.
@@ -61,52 +61,60 @@ case "${1:-}/${2:-}" in
     # plain s2idle path. hybrid-sleep and suspend-then-hibernate are
     # explicitly disallowed in sleep.conf.d but handled gracefully here.
     if [ "${2:-}" = "suspend" ]; then
-      # Record session start; don't overwrite if a re-suspend within the same
-      # lid-close session (brief internal wakeup + immediate re-suspend).
-      [ -f "$SLEEP_SESSION_START" ] || date +%s > "$SLEEP_SESSION_START"
+      if [ ! -f "$SLEEP_SESSION_START" ]; then
+        # First lid close: create session marker and initial WakeSystem alarm.
+        # On re-suspends (SLEEP_SESSION_START already exists), s2idle-auto-hib.sh
+        # has already re-armed the next 5-minute alarm when it ran; creating another
+        # here races with it and causes exponential alarm proliferation — 2 instances
+        # at cycle 2, 3 at cycle 3, etc. (confirmed 2026-07-10/11).
+        date +%s > "$SLEEP_SESSION_START"
 
-      # RTC sysfs wakealarm — kept for completeness but confirmed ineffective
-      # on GZ302EA (RTC not an ACPI S0 wakeup source; fires a ~200 μs
-      # kernel-internal interrupt only, never thaws userspace).
-      if [ -w "$RTC_WAKEALARM" ]; then
-        echo 0 > "$RTC_WAKEALARM" 2>/dev/null || true
-        echo $(( $(date +%s) + MAX_S2IDLE_SEC )) > "$RTC_WAKEALARM" 2>/dev/null || true
+        # RTC sysfs wakealarm — kept for completeness but confirmed ineffective
+        # on GZ302EA (RTC not an ACPI S0 wakeup source; fires a ~200 μs
+        # kernel-internal interrupt only, never thaws userspace).
+        if [ -w "$RTC_WAKEALARM" ]; then
+          echo 0 > "$RTC_WAKEALARM" 2>/dev/null || true
+          echo $(( $(date +%s) + MAX_S2IDLE_SEC )) > "$RTC_WAKEALARM" 2>/dev/null || true
+        fi
+
+        # CLOCK_REALTIME_ALARM wake via systemd WakeSystem=yes.
+        # Uses the alarmtimer subsystem (separate kernel path from sysfs
+        # wakealarm above — may work via rtc-efi or another backend).
+        # When the alarm fires, s2idle-auto-hib.sh is dispatched by PID 1
+        # (reliable even if systemd-sleep re-enters s2idle in ~200 μs).
+        # Cancelled in the post hook so a user lid-open cleans it up.
+        #
+        # Always use the short (5-minute) alarm regardless of AC/battery state.
+        # The hibernate-vs-sleep decision is made in s2idle-auto-hib.sh when the
+        # alarm fires, using the CURRENT battery state at that moment.  Baking the
+        # timeout in at sleep-entry caused the "lid close on AC, then unplug" failure
+        # (2026-07-02): the 1-hour alarm was committed before the cable was pulled;
+        # the machine then sat on battery in S2idle for up to an hour in a bag,
+        # overheated, and hard-crashed before auto-hib ever fired.
+        # With a universal 5-minute alarm, s2idle-auto-hib.sh sees "Discharging"
+        # within 5 minutes of AC removal and hibernates immediately.
+        #
+        # Unit name includes the epoch so each sleep cycle gets a unique name.
+        # Reusing the same unit name across sleep cycles fails: after the timer
+        # fires and completes, the transient unit remains in inactive/dead state
+        # in systemd's memory; systemd-run refuses to create another unit with
+        # the same name until GC runs, causing a WARNING and leaving the machine
+        # with no autonomous wakeup (confirmed 2026-06-18 failure: slept 11 h).
+        _alarm_sec="$MAX_S2IDLE_SEC_BAT"
+        _prev_alarm=$(cat "$WAKE_ALARM_UNIT" 2>/dev/null || true)
+        [ -n "$_prev_alarm" ] && systemctl stop "$_prev_alarm" 2>/dev/null || true
+        rm -f "$WAKE_ALARM_UNIT"
+        _alarm_unit="z13-s2idle-wake-$(date +%s)"
+        systemd-run --no-block \
+          --on-active="${_alarm_sec}s" \
+          --timer-property=WakeSystem=yes \
+          --unit="$_alarm_unit" \
+          -- /usr/lib/z13-hibernate/s2idle-auto-hib.sh 2>/dev/null \
+          && { echo "$_alarm_unit" > "$WAKE_ALARM_UNIT"; echo "s2idle-resume-fixup: $_alarm_unit set for ${_alarm_sec}s (WakeSystem=yes, initial)"; } \
+          || echo "s2idle-resume-fixup: WARNING: WakeSystem alarm scheduling failed — machine may sleep indefinitely"
+      else
+        echo "s2idle-resume-fixup: re-suspend (session $(cat "$SLEEP_SESSION_START")), alarm managed by s2idle-auto-hib.sh"
       fi
-
-      # CLOCK_REALTIME_ALARM wake via systemd WakeSystem=yes.
-      # Uses the alarmtimer subsystem (separate kernel path from sysfs
-      # wakealarm above — may work via rtc-efi or another backend).
-      # When the alarm fires, s2idle-auto-hib.sh is dispatched by PID 1
-      # (reliable even if systemd-sleep re-enters s2idle in ~200 μs).
-      # Cancelled in the post hook so a user lid-open cleans it up.
-      #
-      # Battery-aware timeout: on battery, hibernate after 5 minutes.
-      # On battery, any unattended sleep must resolve quickly — AC removal
-      # can wake+re-enter s2idle silently, leaving the machine warm and
-      # unresponsive indefinitely if the 1-hour alarm is still pending
-      # (confirmed 2026-06-25: machine stuck 20+ min after hotel power cut).
-      # lid-watch already hibernates IMMEDIATELY on battery lid-close, so
-      # this 5-minute path only fires for PowerDevil idle-initiated sleeps.
-      #
-      # Unit name includes the epoch so each sleep cycle gets a unique name.
-      # Reusing the same unit name across sleep cycles fails: after the timer
-      # fires and completes, the transient unit remains in inactive/dead state
-      # in systemd's memory; systemd-run refuses to create another unit with
-      # the same name until GC runs, causing a WARNING and leaving the machine
-      # with no autonomous wakeup (confirmed 2026-06-18 failure: slept 11 h).
-      _bat_now=$(cat /sys/class/power_supply/BAT0/status 2>/dev/null || echo "Unknown")
-      _alarm_sec="$MAX_S2IDLE_SEC"
-      [ "$_bat_now" = "Discharging" ] && _alarm_sec="$MAX_S2IDLE_SEC_BAT"
-      _prev_alarm=$(cat "$WAKE_ALARM_UNIT" 2>/dev/null || true)
-      [ -n "$_prev_alarm" ] && systemctl stop "$_prev_alarm" 2>/dev/null || true
-      _alarm_unit="z13-s2idle-wake-$(date +%s)"
-      systemd-run --no-block \
-        --on-active="${_alarm_sec}s" \
-        --timer-property=WakeSystem=yes \
-        --unit="$_alarm_unit" \
-        -- /usr/lib/z13-hibernate/s2idle-auto-hib.sh 2>/dev/null \
-        && { echo "$_alarm_unit" > "$WAKE_ALARM_UNIT"; echo "s2idle-resume-fixup: $_alarm_unit set for ${_alarm_sec}s (WakeSystem=yes, bat=$_bat_now)"; } \
-        || echo "s2idle-resume-fixup: WARNING: WakeSystem alarm scheduling failed — machine may sleep indefinitely"
 
       # Bring the WiFi interface down and drain before unloading.
       # 3 s: 1 s was not enough — a page still in-flight at the DMA level
@@ -125,18 +133,26 @@ case "${1:-}/${2:-}" in
     ;;
 
   post/suspend|post/hybrid-sleep|post/suspend-then-hibernate)
-    # Cancel both wake alarms set in pre/suspend.
+    # Cancel RTC wakealarm (ineffective on this platform but cleanup is harmless).
     if [ -w "$RTC_WAKEALARM" ]; then
       echo 0 > "$RTC_WAKEALARM" 2>/dev/null || true
     fi
-    _prev_alarm=$(cat "$WAKE_ALARM_UNIT" 2>/dev/null || true)
-    if [ -n "$_prev_alarm" ]; then
-      systemctl stop "$_prev_alarm" 2>/dev/null || true
-      rm -f "$WAKE_ALARM_UNIT"
+    # Cancel WakeSystem alarm only on lid-open (user wake).  For autonomous
+    # wakes (lid still closed), s2idle-auto-hib.sh already re-armed a fresh
+    # 5-minute alarm before exiting; cancelling it here would leave the machine
+    # with no subsequent check alarm.  The pre/suspend hook (triggered when
+    # lid-watch calls systemctl suspend next) stops the old alarm itself.
+    _lid_cancel=$(awk '{print $2}' /proc/acpi/button/lid/LID/state 2>/dev/null || echo open)
+    if [ "$_lid_cancel" = "open" ]; then
+      _prev_alarm=$(cat "$WAKE_ALARM_UNIT" 2>/dev/null || true)
+      if [ -n "$_prev_alarm" ]; then
+        systemctl stop "$_prev_alarm" 2>/dev/null || true
+        rm -f "$WAKE_ALARM_UNIT"
+      fi
     fi
 
     # Display recovery — only on lid-open wakes.  Skip for autonomous wakes
-    # (lid still closed → going to hibernate): qdbus SimulateUserActivity can
+    # (lid still closed → going to hibernate): qdbus6 SimulateUserActivity can
     # block for 25 s when KDE is unresponsive after a long sleep, and the
     # hibernate timer (15 s) would fire before the post hook finishes, causing
     # systemd to refuse hibernate with "Action suspend already in progress"
@@ -152,7 +168,7 @@ case "${1:-}/${2:-}" in
       ( for f in /sys/class/graphics/*/blank; do [ -w "$f" ] && echo 0 > "$f" 2>/dev/null || true; done ) 2>/dev/null || true
       # Step 2: SimulateUserActivity via D-Bus — tells KDE to re-enable DPMS
       # outputs.  Framebuffer unblank alone does not wake KWin's output pipeline
-      # on Wayland.  Timeout 10 s: cap a hung qdbus to prevent blocking the gate.
+      # on Wayland.  Timeout 10 s: cap a hung qdbus6 to prevent blocking the gate.
       _uid=$(id -u gunther 2>/dev/null || echo "")
       if [ -n "$_uid" ]; then
         _xdg="/run/user/$_uid"
@@ -166,7 +182,7 @@ case "${1:-}/${2:-}" in
             DBUS_SESSION_BUS_ADDRESS=unix:path=$_xdg/bus \
             WAYLAND_DISPLAY=$_wl"
           timeout 10 $_qdbus_env \
-            qdbus org.kde.ScreenSaver /ScreenSaver SimulateUserActivity 2>/dev/null \
+            qdbus6 org.kde.ScreenSaver /ScreenSaver SimulateUserActivity 2>/dev/null \
             && echo "s2idle-resume-fixup: SimulateUserActivity sent (DPMS wake)" \
             || true
           # KWin Wayland occasionally stops processing pointer button events after
@@ -174,7 +190,7 @@ case "${1:-}/${2:-}" in
           # reconfigure() re-initialises KWin's input pipeline without the visual
           # disruption of --replace.  No-op if KWin is healthy; harmless if not.
           timeout 5 $_qdbus_env \
-            qdbus org.kde.KWin /KWin reconfigure 2>/dev/null \
+            qdbus6 org.kde.KWin /KWin reconfigure 2>/dev/null \
             && echo "s2idle-resume-fixup: KWin reconfigure sent (input pipeline refresh)" \
             || true
         fi

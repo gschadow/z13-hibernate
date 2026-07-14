@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
-# Called by the WakeSystem alarm (z13-s2idle-wake-EPOCH) after the
-# battery-aware timeout (5 min on battery, 1 hour on AC).
+# Called by the WakeSystem alarm (z13-s2idle-wake-EPOCH) every 5 minutes.
+#
+# The alarm is always armed for 5 minutes (regardless of AC/battery state at
+# sleep entry) so that AC removal mid-sleep is detected within 5 minutes.
+# This script reads CURRENT battery state when the alarm fires and decides.
 #
 # The s2idle post-hook in s2idle-resume-fixup.sh is unreliable after an
 # alarm-triggered wake: the kernel re-enters s2idle within ~400 μs (before
@@ -9,18 +12,24 @@
 # the brief wakeup window, without depending on systemd-sleep thawing first.
 #
 # Battery policy: hibernate regardless of lid state.  On battery, any
-# unattended sleep for the alarm duration must resolve to hibernate — the
-# lid may be open (PowerDevil idle-initiated sleep) or closed.  lid-watch
-# already handles lid-close-on-battery with immediate hibernate, so this
-# path only fires for PowerDevil idle-suspend while lid is open on battery.
+# unattended sleep must resolve to hibernate — the lid may be open
+# (PowerDevil idle-initiated sleep) or closed.  lid-watch already handles
+# lid-close-on-battery with immediate hibernate, so this path only fires for
+# PowerDevil idle-suspend while lid is open, or for AC removal mid-sleep.
 # (Confirmed failure 2026-06-25: lid-open battery sleep, AC removal during
 # s2idle, machine re-entered s2idle silently, stuck until hard reset.)
+# (Confirmed failure 2026-07-02: lid close on AC then unplug; 1-hour alarm
+# committed before cable pulled; machine cooked in bag before auto-hib fired.)
 #
-# AC policy: hibernate only if lid is still closed (avoids hibernating on
-# user lid-open, confirmed bad UX 2026-06-15).
+# AC policy: hibernate only after MAX_AC_S2IDLE_SEC (1 hour) with lid closed.
+# Fires every 5 minutes but skips until threshold is reached, then hibernates.
+# Avoids hibernating immediately on AC (bad for overnight charging), and avoids
+# hibernating on user lid-open (confirmed bad UX 2026-06-15).
 
 SLEEP_SESSION_START=/run/z13-sleep-session-start
 HIB_PENDING=/run/z13-hibernate-pending
+WAKE_ALARM_UNIT=/run/z13-wake-alarm-unit
+MAX_AC_S2IDLE_SEC=3600   # hibernate on AC only after 1 hour of lid-closed sleep
 
 # If session was already cleaned up (lid opened before the alarm fired and
 # post-hook ran), skip — user woke the machine intentionally.
@@ -35,7 +44,28 @@ elapsed=$(( $(date +%s) - session_start ))
 if [ "$bat_status" = "Discharging" ]; then
     echo "s2idle-auto-hib: battery, ${elapsed}s elapsed, lid=${lid_state} — scheduling hibernate"
 elif [ "$lid_state" = "closed" ]; then
-    echo "s2idle-auto-hib: AC, lid closed, ${elapsed}s elapsed — scheduling hibernate"
+    if [ "$elapsed" -lt "$MAX_AC_S2IDLE_SEC" ]; then
+        echo "s2idle-auto-hib: AC, lid closed, ${elapsed}s elapsed < ${MAX_AC_S2IDLE_SEC}s — not hibernating yet"
+        # Re-arm the next 5-minute WakeSystem alarm.  The kernel re-enters
+        # s2idle within ~400 μs of a WakeSystem wake — lid-watch (which would
+        # trigger the pre/suspend hook to set a new alarm) may never get a
+        # chance to run.  Without this re-arm the machine stays in S2idle
+        # forever after the first check fires (confirmed: 7-hour warm-and-dark
+        # failure, 2026-07-07).
+        # Do NOT stop the previous unit — it's the unit we're running inside.
+        # The fired timer is already deactivating; stopping it kills this script
+        # before systemd-run can execute (confirmed self-kill, 2026-07-10).
+        _next="z13-s2idle-wake-$(date +%s)"
+        systemd-run --no-block \
+            --on-active=300s \
+            --timer-property=WakeSystem=yes \
+            --unit="$_next" \
+            -- /usr/lib/z13-hibernate/s2idle-auto-hib.sh 2>/dev/null \
+            && echo "$_next" > "$WAKE_ALARM_UNIT" \
+            || echo "s2idle-auto-hib: WARNING: failed to re-arm WakeSystem alarm — machine may sleep until lid-open"
+        exit 0
+    fi
+    echo "s2idle-auto-hib: AC, lid closed, ${elapsed}s elapsed ≥ ${MAX_AC_S2IDLE_SEC}s — scheduling hibernate"
 else
     echo "s2idle-auto-hib: AC, lid open after ${elapsed}s — skipping (user wake)"
     exit 0

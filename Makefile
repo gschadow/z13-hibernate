@@ -26,6 +26,8 @@ install:
 	install -m 755 src/cstate-hold.sh           $(DESTDIR)$(PREFIX)/lib/z13-hibernate/cstate-hold.sh
 	install -m 755 src/lid-watch.sh             $(DESTDIR)$(PREFIX)/lib/z13-hibernate/lid-watch.sh
 	install -m 755 src/s2idle-auto-hib.sh       $(DESTDIR)$(PREFIX)/lib/z13-hibernate/s2idle-auto-hib.sh
+	install -m 755 src/z13-gpu-compute-affinity.sh \
+	               $(DESTDIR)$(PREFIX)/lib/z13-hibernate/z13-gpu-compute-affinity.sh
 
 	# systemd-sleep hooks (ordering via numeric prefix)
 	install -d $(DESTDIR)$(PREFIX)/lib/systemd/system-sleep
@@ -67,6 +69,10 @@ install:
 	               $(DESTDIR)$(PREFIX)/lib/z13-hibernate/z13-battery-guard.sh
 	install -m 644 systemd/z13-irq-affinity-kbd.service \
 	               $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-irq-affinity-kbd.service
+	install -m 644 systemd/z13-gpu-compute-affinity.service \
+	               $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-gpu-compute-affinity.service
+	install -m 644 systemd/z13-gpu-compute-affinity.timer \
+	               $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-gpu-compute-affinity.timer
 
 	# initcpio hook (two search paths: /etc and /usr/lib)
 	install -d $(DESTDIR)/etc/initcpio/hooks $(DESTDIR)/etc/initcpio/install
@@ -95,6 +101,7 @@ deploy: install
 	systemctl enable --now z13-lid-watch.service
 	systemctl enable --now z13-battery-guard.timer
 	systemctl enable --now z13-irq-affinity-kbd.service
+	systemctl enable --now z13-gpu-compute-affinity.timer
 	sysctl -p /etc/sysctl.d/z13-gpu-memory.conf
 	# PowerDevil lid: z13-lid-watch owns lid events (3s debounce; raw lid
 	# events race s2idle on this machine). 0 = Do nothing for lid.
@@ -131,6 +138,9 @@ uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-battery-guard.service
 	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-battery-guard.timer
 	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-irq-affinity-kbd.service
+	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-gpu-compute-affinity.service
+	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system/z13-gpu-compute-affinity.timer
+	rm -f $(DESTDIR)$(PREFIX)/lib/z13-hibernate/z13-gpu-compute-affinity.sh
 	rm -f $(DESTDIR)/etc/sysctl.d/z13-gpu-memory.conf
 	-rmdir $(DESTDIR)$(PREFIX)/lib/z13-hibernate 2>/dev/null || true
 	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/system-sleep/05-hibernate-hook.sh

@@ -1,0 +1,11 @@
+[Unit]
+Description=Periodically confine GPU compute processes to CPUs 16-31
+Documentation=https://github.com/gschadow/z13-hibernate
+
+[Timer]
+OnBootSec=15s
+OnUnitActiveSec=3s
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target

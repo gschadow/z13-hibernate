@@ -1,0 +1,9 @@
+[Unit]
+Description=Confine GPU compute processes to CPUs 16-31
+Documentation=https://github.com/gschadow/z13-hibernate
+DefaultDependencies=no
+After=sysinit.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/z13-hibernate/z13-gpu-compute-affinity.sh

@@ -93,6 +93,23 @@ if [ "$capacity" -le "$EMERGENCY_PCT" ]; then
     exit 0
 fi
 
+# ── Post-resume cooldown ──────────────────────────────────────────────────────
+# After hibernate resume, the OnUnitActiveSec=5min timer fires within ~1 min
+# (time elapsed during hibernation catches up the monotonic interval).  The
+# system hasn't settled yet — screen is still recovering, load is near zero,
+# NET_SNAP was cleared (tmpfs) — and the idle-on-battery check would trigger
+# a spurious re-hibernate (confirmed 2026-07-02).  Skip all non-emergency
+# decisions for 10 minutes after resume.
+if [ -f /run/z13-resume-cooldown ]; then
+    age=$(( $(date +%s) - $(stat -c %Y /run/z13-resume-cooldown 2>/dev/null || echo 0) ))
+    if [ "$age" -lt 600 ]; then
+        echo "z13-battery-guard: post-resume cooldown (${age}s < 600s) — skipping"
+        exit 0
+    else
+        rm -f /run/z13-resume-cooldown
+    fi
+fi
+
 # ── Screen-presence check ────────────────────────────────────────────────────
 # screen_on=yes  → user is present; respect their choice at low battery
 # screen_on=no   → user is away; safe to hibernate at LOW_BAT_PCT threshold

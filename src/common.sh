@@ -333,6 +333,11 @@ _GPU_WHITELIST='^(kwin_wayland|kwin|plasmashell|kded5|kded6|kded|sddm|sddm-greet
 _GPU_SERVICE_WHITELIST='^(plasma-kwin_wayland|plasma-kwin_x11|plasma-plasmashell|plasma-xdg-desktop-portal-kde|plasma-polkit-kde-authentication-agent-1|sddm|display-manager|graphical-session)\.service$'
 
 _gpu_get_compute_pids() {
+  # Only /dev/kfd holders are true ROCm compute workloads that cause the
+  # amdgpu PM_HIBERNATION_PREPARE hang (dirty GPU VM state from cancelled
+  # inference).  /dev/dri/renderD* holders are display clients (Chrome,
+  # Firefox, VMs) that drain naturally when KWin compositor is suspended —
+  # they do NOT cause the hang and must not be killed.
   for fd_dir in /proc/[0-9]*/fd; do
     local pid="${fd_dir%/fd}"; pid="${pid#/proc/}"
     [ -d "/proc/$pid" ] || continue
@@ -344,7 +349,7 @@ _gpu_get_compute_pids() {
       local target
       target=$(readlink "$fd" 2>/dev/null) || continue
       case "$target" in
-        /dev/dri/render*|/dev/kfd) echo "$pid"; break;;
+        /dev/kfd) echo "$pid"; break;;
       esac
     done
   done | sort -u
@@ -355,8 +360,13 @@ _gpu_classify_pid() {
   local pid="$1" cgroup svc
   cgroup=$(cat "/proc/$pid/cgroup" 2>/dev/null || echo "")
   # cgroup v2: "0::/system.slice/foo.service" or "0::/user.slice/.../foo.service"
+  # For scope units (app-chrome-*.scope), grep -oE '[^/]+\.service' picks the
+  # PARENT service in the path (e.g. user@1000.service), not the scope itself.
+  # Stopping user@1000.service would kill the entire user session, so we treat
+  # user@*.service as unclassified, letting the caller SIGTERM the bare pid instead.
   svc=$(echo "$cgroup" | grep -oE '[^/]+\.service' | tail -1 || true)
   [ -z "$svc" ] && return 0
+  echo "$svc" | grep -qE '^user@[0-9]+\.service$' && return 0
   if echo "$cgroup" | grep -q 'system\.slice'; then
     echo "system:$svc"
   else
@@ -446,16 +456,15 @@ restore_screen() {
     # Resume KWin compositor that was suspended in the gate hook for GPU fence drain.
     # The suspended state is preserved in the S4 hibernation image; without this call
     # KWin wakes up with compositing off → Wayland renders nothing → black screen.
-    [ -n "$wl_display" ] && sudo -u "$user" env $uenv qdbus org.kde.KWin /Compositor resume 2>/dev/null \
-      && kmsg "common: KWin compositor resumed" \
-      || true
+    # KWin compositor resume skipped: gate-hook suspend fails in KWin 6.x so
+    # compositor is never actually suspended — nothing to resume here.
     # Do NOT call kscreen-doctor output.eDP-1.enable: it fights with KWin's atomic
     # modesetting and causes cascading "atomic commit failed: Device or resource busy"
     # for the entire session, which blocks amdgpu PM_HIBERNATION_PREPARE on next hibernate.
-    timeout 5 sudo -u "$user" env $uenv qdbus org.kde.Solid.PowerManagement /org/kde/Solid/PowerManagement org.kde.Solid.PowerManagement.wakeScreen 2>/dev/null || true
+    timeout 5 sudo -u "$user" env $uenv qdbus6 org.kde.Solid.PowerManagement /org/kde/Solid/PowerManagement org.kde.Solid.PowerManagement.wakeScreen 2>/dev/null || true
     # kscreenlocker sometimes crashes on S4 resume leaving KWin in locked state with black screen.
     # loginctl unlock-sessions (above) marks the session unlocked; this simulates activity so KWin repaints.
-    timeout 3 sudo -u "$user" env $uenv qdbus org.kde.screensaver /ScreenSaver SimulateUserActivity 2>/dev/null || true
+    timeout 3 sudo -u "$user" env $uenv qdbus6 org.kde.screensaver /ScreenSaver SimulateUserActivity 2>/dev/null || true
   fi
   console_msg "screen restore complete"
 }

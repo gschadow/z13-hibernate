@@ -55,27 +55,19 @@ if [ -n "$_hib_uid" ]; then
   done
   if [ -n "$_hib_wl" ]; then
     _hib_env="XDG_RUNTIME_DIR=$_hib_xdg DBUS_SESSION_BUS_ADDRESS=unix:path=$_hib_xdg/bus WAYLAND_DISPLAY=$_hib_wl"
-    if timeout 5 sudo -u "$_hib_user" env $_hib_env qdbus org.kde.KWin /Compositor suspend 2>/dev/null; then
+    if timeout 5 sudo -u "$_hib_user" env $_hib_env qdbus6 org.kde.KWin /Compositor suspend 2>/dev/null; then
       kmsg "gate: KWin compositor suspended (GPU fences will drain before PM notifier)"
       sleep 2
     else
-      # Compositor suspend failed — GPU has dirty VM state (cascading "atomic commit failed"
-      # errors visible in KWin log).  Run kwin_wayland --replace to forcefully clear the
-      # dirty amdgpu state, wait for the new instance to settle, then retry.
-      kmsg "gate: compositor suspend failed — running kwin_wayland --replace to clear dirty GPU VM"
-      sudo -u "$_hib_user" env \
-        XDG_RUNTIME_DIR="$_hib_xdg" \
-        DBUS_SESSION_BUS_ADDRESS="unix:path=$_hib_xdg/bus" \
-        WAYLAND_DISPLAY="$_hib_wl" \
-        kwin_wayland --replace &>/dev/null &
-      sleep 8
-      if timeout 5 sudo -u "$_hib_user" env $_hib_env qdbus org.kde.KWin /Compositor suspend 2>/dev/null; then
-        kmsg "gate: compositor suspended after kwin --replace (GPU state cleared)"
-        sleep 2
-      else
-        kmsg "gate: compositor still failed after --replace — waiting 15s more for natural drain"
-        sleep 15
-      fi
+      # KWin 6.x compositor D-Bus suspend interface fails consistently (confirmed
+      # across all hibernates in log — not a dirty-state indicator, just a broken
+      # API).  Do NOT run kwin_wayland --replace here: it crashes kscreenlocker,
+      # orphans input device objects, and compounds session instability across
+      # hibernate cycles (confirmed unresponsive lock screen 2026-07-02/03).
+      # The GPU drains naturally: stop_and_record_busy checks gpu_busy_percent
+      # and confirms 0% before proceeding — no manual drain step needed.
+      kmsg "gate: compositor suspend unavailable (KWin 6.x API) — GPU drains naturally via busy% check"
+      sleep 2
     fi
   else
     kmsg "gate: no Wayland socket found for $_hib_user, skipping compositor suspend"

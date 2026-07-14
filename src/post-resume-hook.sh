@@ -15,6 +15,11 @@ if [ ! -f /run/z13-was-hibernated ]; then
   exit 0
 fi
 
+# Prevent battery-guard from immediately re-hibernating.  Its OnUnitActiveSec=5min
+# timer fires within ~1 minute of resume because monotonic elapsed time during
+# hibernation catches up the interval; confirmed spurious re-hibernate 2026-07-02.
+touch /run/z13-resume-cooldown
+
 # Since we don't do real kill -STOP yet (sidestep in get_busy_pids), there is
 # little to CONT here. When we enable real detection, move the heavy CONT + any
 # "system is really back" recovery here.
@@ -24,33 +29,44 @@ restore_screen
 restore_lights_and_profile
 restart_gpu_processes
 
-# Restart KWin after S4 resume to clear dirty amdgpu GPU VM state from the
-# kscreenlocker crash that occurs on every S4 resume (observed every resume,
-# documented in gate-hook.sh).  Without this, the session accumulates cascading
-# "atomic commit failed: Device or resource busy" errors; the next hibernate's
-# compositor suspend call fails; GPU processes are killed with "non-zero when fini"
-# VM memory; and the amdgpu PM_HIBERNATION_PREPARE notifier hangs indefinitely at
-# "PM: hibernation: hibernation entry" (confirmed failure log 2026-06-26 05:06).
-# --replace takes over the live compositor slot so display is not lost, only
-# briefly flickered.  This runs AFTER restore_screen so the display is already on.
-_pr_uid=$(id -u gunther 2>/dev/null || echo "")
-if [ -n "$_pr_uid" ]; then
-  _pr_xdg="/run/user/$_pr_uid"
-  _pr_wl=""
-  for _w in wayland-0 wayland-1 wayland-2; do
-    [ -S "$_pr_xdg/$_w" ] && _pr_wl="$_w" && break
+# Restart ollama — gate-hook.sh stops it before hibernate to drain GPU fences,
+# but that stop bypasses _GPU_STOPPED_FILE so restart_gpu_processes won't catch it.
+if systemctl is-enabled --quiet ollama 2>/dev/null; then
+  systemctl start ollama 2>/dev/null \
+    && kmsg "post-resume: ollama restarted" \
+    || kmsg "post-resume: ollama start failed (start manually if needed)"
+fi
+
+# KWin --replace: removed.  The gate-hook no longer runs kwin_wayland --replace
+# on compositor suspend failure (KWin 6.x API change — fixed 2026-07-08).
+# Without gate-hook --replace, kscreenlocker survives every hibernate cycle
+# cleanly, so there is no accumulated dirty amdgpu GPU VM state to clear here.
+# Running --replace unnecessarily crashes kscreenlocker and causes the exact
+# session corruption it was meant to prevent.
+
+# Reload VirtualBox kernel modules.
+# The gate hook kills GPU-holding processes (including any running VMs) before
+# hibernate; their reference counts drop to zero and the vbox modules auto-unload
+# before the hibernate image is captured, so they are gone on resume.
+# modprobe is a no-op when modules are already loaded, so this is always safe.
+if modinfo vboxdrv &>/dev/null 2>&1; then
+  for _vmod in vboxdrv vboxnetflt vboxnetadp; do
+    modprobe "$_vmod" 2>/dev/null && kmsg "post-resume: modprobe $_vmod OK" || kmsg "post-resume: modprobe $_vmod failed (skipping)"
   done
-  if [ -n "$_pr_wl" ]; then
-    sleep 3
-    sudo -u gunther env \
-      XDG_RUNTIME_DIR="$_pr_xdg" \
-      DBUS_SESSION_BUS_ADDRESS="unix:path=$_pr_xdg/bus" \
-      WAYLAND_DISPLAY="$_pr_wl" \
-      kwin_wayland --replace &>/dev/null &
-    kmsg "post-resume: KWin --replace launched (clearing dirty amdgpu VM from kscreenlocker crash)"
-  else
-    kmsg "post-resume: no Wayland socket found — skipping KWin --replace (manual kwin_wayland --replace may be needed)"
-  fi
+  # Recreate host-only interfaces.  The OS-level vboxnet* interfaces are
+  # destroyed when vboxnetadp unloads; VirtualBox's own config still references
+  # them, so 'hostonlyif create' makes a new one (vboxnet1 if vboxnet0 is stale
+  # in the config).  Remove stale records first so the new interface reclaims
+  # vboxnet0 (and any additional ones the user had).
+  _vbox_needed=$(VBoxManage list hostonlyifs 2>/dev/null | awk '/^Name:/{print $2}')
+  for _viface in $_vbox_needed; do
+    if ! ip link show "$_viface" &>/dev/null 2>&1; then
+      VBoxManage hostonlyif remove "$_viface" 2>/dev/null || true
+      VBoxManage hostonlyif create 2>/dev/null \
+        && kmsg "post-resume: recreated VBox host-only interface (was $_viface)" \
+        || kmsg "post-resume: VBox hostonlyif create failed — start VirtualBox manually"
+    fi
+  done
 fi
 
 # Final "we are done" color

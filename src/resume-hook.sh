@@ -55,26 +55,10 @@ restore_processes
 # Kill any stray watcher
 kill_hibernate_watcher
 
-# Early compositor resume: gate-hook suspended KWin compositor to drain GPU fences before
-# the PM_HIBERNATION_PREPARE notifier. The suspended state is frozen into the S4 image.
-# Resume it immediately so KWin starts rendering again. If D-Bus isn't quite ready this
-# will silently fail; restore_screen() in post-resume-hook retries 15 seconds later.
-_early_uid=$(id -u gunther 2>/dev/null || echo "")
-if [ -n "$_early_uid" ]; then
-  _early_xdg="/run/user/$_early_uid"
-  _early_wl=""
-  for _w in wayland-0 wayland-1 wayland-2; do
-    [ -S "$_early_xdg/$_w" ] && _early_wl="$_w" && break
-  done
-  if [ -n "$_early_wl" ]; then
-    sudo -u gunther env XDG_RUNTIME_DIR="$_early_xdg" \
-      DBUS_SESSION_BUS_ADDRESS="unix:path=$_early_xdg/bus" \
-      WAYLAND_DISPLAY="$_early_wl" \
-      qdbus org.kde.KWin /Compositor resume 2>/dev/null \
-      && kmsg "resume: KWin compositor resumed (early)" \
-      || kmsg "resume: KWin compositor resume (early) failed — will retry in post-resume-hook"
-  fi
-fi
+# KWin compositor resume: skipped.  The gate-hook's compositor suspend call fails
+# in KWin 6.x (API changed), so the compositor is never actually suspended in the
+# hibernate image — there is nothing to resume here.  The post-resume-hook handles
+# display recovery via restore_screen (DPMS unblank + SimulateUserActivity).
 
 # Reload mt7925e WiFi after S4 resume.
 # We unloaded it in the pre-hook to prevent the PM-suspend firmware-timeout hang.

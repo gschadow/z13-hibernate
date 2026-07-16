@@ -55,6 +55,22 @@ restore_processes
 # Kill any stray watcher
 kill_hibernate_watcher
 
+# Clear s2idle session state that survived in the hibernate image.
+# s2idle-auto-hib.sh removes SLEEP_SESSION_START before scheduling hibernate,
+# but the pre/suspend hook (called when the machine briefly re-enters S2idle
+# in the 15s window before z13-long-sleep-hibernate fires) recreates it with
+# a current timestamp.  That stale timestamp is then baked into the image.
+# On resume, stale WakeSystem alarms fire immediately (their real-time deadlines
+# are in the past), see elapsed = hours >> 3600s, and schedule an immediate
+# re-hibernate — confirmed 2026-07-15: 5-second accidental lid close triggered
+# instant spurious hibernate because elapsed measured from the previous night.
+# Also stop any surviving stale z13-s2idle-wake-* timer units: over multiple
+# cycles without the proliferation fix they accumulated in systemd state and
+# all fired simultaneously on resume, spawning dozens of instances per second.
+rm -f /run/z13-sleep-session-start /run/z13-wake-alarm-unit
+systemctl stop 'z13-s2idle-wake-*' 2>/dev/null || true
+kmsg "resume: cleared s2idle session state (SLEEP_SESSION_START, WAKE_ALARM_UNIT, stale alarms)"
+
 # KWin compositor resume: skipped.  The gate-hook's compositor suspend call fails
 # in KWin 6.x (API changed), so the compositor is never actually suspended in the
 # hibernate image — there is nothing to resume here.  The post-resume-hook handles

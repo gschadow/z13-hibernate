@@ -46,15 +46,28 @@ if [ "$bat_status" = "Discharging" ]; then
 elif [ "$lid_state" = "closed" ]; then
     if [ "$elapsed" -lt "$MAX_AC_S2IDLE_SEC" ]; then
         echo "s2idle-auto-hib: AC, lid closed, ${elapsed}s elapsed < ${MAX_AC_S2IDLE_SEC}s — not hibernating yet"
-        # Re-arm the next 5-minute WakeSystem alarm.  The kernel re-enters
-        # s2idle within ~400 μs of a WakeSystem wake — lid-watch (which would
-        # trigger the pre/suspend hook to set a new alarm) may never get a
-        # chance to run.  Without this re-arm the machine stays in S2idle
-        # forever after the first check fires (confirmed: 7-hour warm-and-dark
-        # failure, 2026-07-07).
+        # Re-arm the next 5-minute WakeSystem alarm.  One-winner guard: stale
+        # units from a past proliferation cycle all fire in the same wake window;
+        # flock(-n) ensures only the first instance proceeds; the WAKE_ALARM_UNIT
+        # check handles sequential arrivals after the winner finishes quickly and
+        # releases the lock.  Both guards are needed: flock for simultaneous
+        # races, WAKE_ALARM_UNIT for sequential ones seconds apart.
+        # (Second proliferation path confirmed 2026-07-19: 158 units × 1 unit/s
+        # over a 3-minute firing window = 158 new units per cycle.)
         # Do NOT stop the previous unit — it's the unit we're running inside.
         # The fired timer is already deactivating; stopping it kills this script
         # before systemd-run can execute (confirmed self-kill, 2026-07-10).
+        _lockfile="/var/lock/z13-s2idle-rearm.lock"
+        exec 9>"$_lockfile"
+        if ! flock -n 9; then
+            echo "s2idle-auto-hib: re-arm lock busy — another instance re-arming (pid=$$, yielding)"
+            exit 0
+        fi
+        _existing=$(cat "$WAKE_ALARM_UNIT" 2>/dev/null || true)
+        if [ -n "$_existing" ] && systemctl is-active --quiet "${_existing}.timer" 2>/dev/null; then
+            echo "s2idle-auto-hib: alarm $_existing already active — yielding (pid=$$)"
+            exit 0
+        fi
         _next="z13-s2idle-wake-$(date +%s)"
         systemd-run --no-block \
             --on-active=300s \

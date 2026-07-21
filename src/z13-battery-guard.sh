@@ -5,17 +5,24 @@
 # Policy (evaluated in order):
 #
 #   battery ≤ EMERGENCY_PCT (2%)
-#       Hibernate unconditionally.  Hardware will cut power at 0%; KDE has
-#       already shown low-battery notifications at 20/15/10/5%.
+#       Hibernate unconditionally.  Hardware will cut power at 0%; this is
+#       the last-resort floor before battery check is moved above cooldown.
 #
-#   battery ≤ LOW_BAT_PCT (15%) AND screen is off
+#   battery ≤ CRITICAL_FLOOR_PCT (15%) [evaluated after cooldown]
+#       Hibernate unconditionally — user present or not.  KDE PowerDevil's
+#       critical battery action typically fires at 5-10%, which is too late:
+#       this machine's LUKS-encrypted S4 write runs throttled (no CPU boost,
+#       EC brownout risk), and the write can take 10+ minutes.  Battery died
+#       at 1% mid-write after PowerDevil triggered at ~7% (confirmed 2026-07-21).
+#       15% gives ~12 minutes of runway at the observed ~1.2%/min drain rate.
+#
+#   battery ≤ LOW_BAT_PCT (25%) AND screen is off
 #       User is not present.  Hibernate to save state before the battery
-#       dies.  Better to resume from hibernate at 13% than crash at 0%.
+#       dies.  Better to resume from hibernate at 22% than crash at 0%.
 #
-#   battery ≤ LOW_BAT_PCT (15%) AND screen is on
-#       User is actively present and has chosen to continue despite the
-#       KDE battery notifications.  Skip — they are managing the situation.
-#       The EMERGENCY_PCT floor still applies.
+#   battery ≤ LOW_BAT_PCT (25%) AND screen is on AND battery > CRITICAL_FLOOR_PCT
+#       User is actively present and battery is not yet critical.  Skip.
+#       KDE notifications are visible.  CRITICAL_FLOOR_PCT overrides at 15%.
 #
 #   load1 > LOAD_IDLE_MAX  (default 1.0, absolute — NOT scaled by nproc)
 #       CPU or disk-IO work in progress (compiler, local inference, DB query).
@@ -61,7 +68,8 @@ set -euo pipefail
 
 BAT=/sys/class/power_supply/BAT0
 EMERGENCY_PCT=2           # always hibernate: hardware safety floor
-LOW_BAT_PCT=15            # hibernate when screen off; skip when user present
+CRITICAL_FLOOR_PCT=15     # unconditional below this: hibernate even if user is present
+LOW_BAT_PCT=25            # hibernate when screen off + idle; skip when user present
 NET_SNAP=/run/z13-bat-net-snap   # persists non-loopback byte count between runs
 NET_BUSY_BYTES=51200      # 50 KB: above this = active network work in progress
 
@@ -140,8 +148,14 @@ if [ "$capacity" -le "$LOW_BAT_PCT" ]; then
     if [ "$screen_on" = "no" ]; then
         echo "z13-battery-guard: battery ${capacity}%, screen off — hibernating (below ${LOW_BAT_PCT}%, user absent)"
         systemctl hibernate
+    elif [ "$capacity" -le "$CRITICAL_FLOOR_PCT" ]; then
+        # Below critical floor: hibernate regardless of user presence.
+        # KDE PowerDevil cannot be trusted as the sole trigger — it fires too
+        # late for this machine's throttled hibernate write (2026-07-21).
+        echo "z13-battery-guard: battery ${capacity}% ≤ ${CRITICAL_FLOOR_PCT}% — critical floor, hibernating (user may be present)"
+        systemctl hibernate
     else
-        echo "z13-battery-guard: battery ${capacity}%, user present — skipping (emergency floor: ${EMERGENCY_PCT}%)"
+        echo "z13-battery-guard: battery ${capacity}%, user present — skipping (critical floor at ${CRITICAL_FLOOR_PCT}%)"
     fi
     exit 0
 fi

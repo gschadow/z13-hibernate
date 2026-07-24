@@ -49,6 +49,7 @@ MT_UNLOADED_FLAG=/run/z13-s2idle-mt-unloaded
 RTC_WAKEALARM=/sys/class/rtc/rtc0/wakealarm
 HIB_PENDING=/run/z13-hibernate-pending
 WAKE_ALARM_UNIT=/run/z13-wake-alarm-unit   # stores the current timer's unit name
+OLLAMA_STOPPED_FLAG=/run/z13-ollama-stopped-for-s2idle
 MAX_S2IDLE_SEC=3600        # 1 hour: hibernate threshold on AC (lid-closed auto-wake)
 MAX_S2IDLE_SEC_BAT=300     # 5 min: hibernate threshold on battery (any auto-wake)
 _wifi_if=wlp194s0
@@ -109,11 +110,24 @@ case "${1:-}/${2:-}" in
           --on-active="${_alarm_sec}s" \
           --timer-property=WakeSystem=yes \
           --unit="$_alarm_unit" \
-          -- /usr/lib/z13-hibernate/s2idle-auto-hib.sh 2>/dev/null \
+          -- /usr/lib/z13-hibernate/s2idle-auto-hib.sh "$_alarm_unit" 2>/dev/null \
           && { echo "$_alarm_unit" > "$WAKE_ALARM_UNIT"; echo "s2idle-resume-fixup: $_alarm_unit set for ${_alarm_sec}s (WakeSystem=yes, initial)"; } \
           || echo "s2idle-resume-fixup: WARNING: WakeSystem alarm scheduling failed — machine may sleep indefinitely"
       else
         echo "s2idle-resume-fixup: re-suspend (session $(cat "$SLEEP_SESSION_START")), alarm managed by s2idle-auto-hib.sh"
+      fi
+
+      # Stop ollama to drain ROCm GPU fences before S2idle.
+      # With active compute running, amdgpu can hang on the suspend/resume path
+      # after repeated S2idle cycles (confirmed 2026-07-24: 5.5 h S2idle with
+      # llama-server active → GPU hang on wake, wallpaper frozen, no keyboard).
+      # The gate hook already does this for S4 hibernate; mirror it here.
+      # Only on first lid-close — ollama stays stopped for all re-suspends; it
+      # is restarted in the post hook when the user actually opens the lid.
+      if systemctl is-active --quiet ollama 2>/dev/null; then
+        systemctl stop ollama 2>/dev/null || true
+        touch "$OLLAMA_STOPPED_FLAG"
+        echo "s2idle-resume-fixup: stopped ollama (ROCm GPU drain for S2idle)"
       fi
 
       # Bring the WiFi interface down and drain before unloading.
@@ -162,6 +176,13 @@ case "${1:-}/${2:-}" in
     # recovery is skipped when they actually open the lid (confirmed 2026-06-15).
     _lid_now=$(awk '{print $2}' /proc/acpi/button/lid/LID/state 2>/dev/null || echo open)
     if [ "$_lid_now" = "open" ]; then
+      # Restart ollama if we stopped it on S2idle entry.
+      if [ -f "$OLLAMA_STOPPED_FLAG" ]; then
+        rm -f "$OLLAMA_STOPPED_FLAG"
+        systemctl start ollama 2>/dev/null || true
+        echo "s2idle-resume-fixup: restarted ollama (user lid-open)"
+      fi
+
       # Step 1: framebuffer unblank — safe kernel-level unblank.  Do NOT write
       # /sys/class/drm/*/dpms: KWin owns the DRM device on Wayland; writing DPMS
       # sysfs while KWin holds it causes atomic-commit EBUSY → black screen.

@@ -31,6 +31,10 @@ HIB_PENDING=/run/z13-hibernate-pending
 WAKE_ALARM_UNIT=/run/z13-wake-alarm-unit
 MAX_AC_S2IDLE_SEC=3600   # hibernate on AC only after 1 hour of lid-closed sleep
 
+# Unit name we were spawned from — passed as $1 by systemd-run so the
+# one-winner guard can exclude our own timer from the is-active check.
+OWN_UNIT="${1:-}"
+
 # If session was already cleaned up (lid opened before the alarm fired and
 # post-hook ran), skip — user woke the machine intentionally.
 [ -f "$SLEEP_SESSION_START" ] || exit 0
@@ -64,7 +68,14 @@ elif [ "$lid_state" = "closed" ]; then
             exit 0
         fi
         _existing=$(cat "$WAKE_ALARM_UNIT" 2>/dev/null || true)
-        if [ -n "$_existing" ] && systemctl is-active --quiet "${_existing}.timer" 2>/dev/null; then
+        # Exclude OWN_UNIT from the is-active check: a one-shot timer stays in
+        # "deactivating" state while this service runs, so is-active returns
+        # true for it — but that is NOT a duplicate, just our own timer winding
+        # down.  Only yield if a *different* unit (created by a concurrent
+        # winner instance) is genuinely active.
+        # Failing to exclude OWN_UNIT caused every cycle to yield, breaking the
+        # alarm chain after the first fire (confirmed 2026-07-24).
+        if [ -n "$_existing" ] && [ "$_existing" != "$OWN_UNIT" ] && systemctl is-active --quiet "${_existing}.timer" 2>/dev/null; then
             echo "s2idle-auto-hib: alarm $_existing already active — yielding (pid=$$)"
             exit 0
         fi
@@ -73,7 +84,7 @@ elif [ "$lid_state" = "closed" ]; then
             --on-active=300s \
             --timer-property=WakeSystem=yes \
             --unit="$_next" \
-            -- /usr/lib/z13-hibernate/s2idle-auto-hib.sh 2>/dev/null \
+            -- /usr/lib/z13-hibernate/s2idle-auto-hib.sh "$_next" 2>/dev/null \
             && echo "$_next" > "$WAKE_ALARM_UNIT" \
             || echo "s2idle-auto-hib: WARNING: failed to re-arm WakeSystem alarm — machine may sleep until lid-open"
         exit 0

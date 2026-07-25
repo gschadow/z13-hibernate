@@ -163,6 +163,13 @@ case "${1:-}/${2:-}" in
         systemctl stop "$_prev_alarm" 2>/dev/null || true
         rm -f "$WAKE_ALARM_UNIT"
       fi
+      # Cancel any pending hibernate timer set by s2idle-auto-hib.sh or the
+      # long-sleep gate below.  The 15-second monotonic timer survives lid-open
+      # if the user wakes the machine before it fires; without this cancel it
+      # fires ~15 s after waking and hibernates the machine while the user is
+      # actively working (confirmed 2026-07-25).
+      systemctl stop z13-long-sleep-hibernate 2>/dev/null || true
+      rm -f "$HIB_PENDING"
     fi
 
     # Display recovery — only on lid-open wakes.  Skip for autonomous wakes

@@ -8,21 +8,23 @@
 #       Hibernate unconditionally.  Hardware will cut power at 0%; this is
 #       the last-resort floor before battery check is moved above cooldown.
 #
-#   battery ≤ CRITICAL_FLOOR_PCT (15%) [evaluated after cooldown]
+#   battery ≤ CRITICAL_FLOOR_PCT (10%) [evaluated after cooldown]
 #       Hibernate unconditionally — user present or not.  KDE PowerDevil's
 #       critical battery action typically fires at 5-10%, which is too late:
-#       this machine's LUKS-encrypted S4 write runs throttled (no CPU boost,
-#       EC brownout risk), and the write can take 10+ minutes.  Battery died
-#       at 1% mid-write after PowerDevil triggered at ~7% (confirmed 2026-07-21).
-#       15% gives ~12 minutes of runway at the observed ~1.2%/min drain rate.
+#       this machine's LUKS-encrypted S4 write can fail mid-write if the
+#       battery gives out (battery died at 1% after PowerDevil triggered at
+#       ~7%, confirmed 2026-07-21).  Observed hibernate write time is 1-2
+#       minutes (~1.2-2.4% at 1.2%/min drain); 10% gives ~8 minutes of
+#       runway.  A 60-second user-visible countdown fires first.
 #
 #   battery ≤ LOW_BAT_PCT (25%) AND screen is off
 #       User is not present.  Hibernate to save state before the battery
 #       dies.  Better to resume from hibernate at 22% than crash at 0%.
 #
 #   battery ≤ LOW_BAT_PCT (25%) AND screen is on AND battery > CRITICAL_FLOOR_PCT
-#       User is actively present and battery is not yet critical.  Skip.
-#       KDE notifications are visible.  CRITICAL_FLOOR_PCT overrides at 15%.
+#       User is actively present and battery is not yet critical.  Show a
+#       warning notification every check cycle so user knows to plug in.
+#       CRITICAL_FLOOR_PCT overrides at 10%.
 #
 #   load1 > LOAD_IDLE_MAX  (default 1.0, absolute — NOT scaled by nproc)
 #       CPU or disk-IO work in progress (compiler, local inference, DB query).
@@ -68,8 +70,8 @@ set -euo pipefail
 
 BAT=/sys/class/power_supply/BAT0
 EMERGENCY_PCT=2           # always hibernate: hardware safety floor
-CRITICAL_FLOOR_PCT=15     # unconditional below this: hibernate even if user is present
-LOW_BAT_PCT=25            # hibernate when screen off + idle; skip when user present
+CRITICAL_FLOOR_PCT=10     # unconditional below this: 60-s warning then hibernate
+LOW_BAT_PCT=25            # hibernate when screen off; warn user when screen on
 NET_SNAP=/run/z13-bat-net-snap   # persists non-loopback byte count between runs
 NET_BUSY_BYTES=51200      # 50 KB: above this = active network work in progress
 
@@ -144,38 +146,65 @@ if [ "$screen_on" = "yes" ]; then
 fi
 
 # ── Low-battery decisions ────────────────────────────────────────────────────
+# Locate user Wayland session once; used by both notification paths below.
+_notify_uid=$(id -u gunther 2>/dev/null || echo "")
+_notify_xdg="" _notify_wl="" _notify_dbus=""
+if [ -n "$_notify_uid" ]; then
+    _notify_xdg="/run/user/$_notify_uid"
+    for _w in wayland-0 wayland-1 wayland-2; do
+        if [ -S "$_notify_xdg/$_w" ]; then
+            _notify_wl="$_w"
+            _notify_dbus="unix:path=$_notify_xdg/bus"
+            break
+        fi
+    done
+fi
+
+_notify() {
+    # _notify URGENCY TIMEOUT_MS TITLE BODY
+    [ -z "$_notify_wl" ] && return 0
+    sudo -u gunther env \
+        XDG_RUNTIME_DIR="$_notify_xdg" \
+        DBUS_SESSION_BUS_ADDRESS="$_notify_dbus" \
+        WAYLAND_DISPLAY="$_notify_wl" \
+        notify-send -u "$1" -t "$2" "$3" "$4" 2>/dev/null || true
+}
+
+_alert_sound() {
+    [ -z "$_notify_wl" ] && return 0
+    sudo -u gunther env \
+        XDG_RUNTIME_DIR="$_notify_xdg" \
+        DBUS_SESSION_BUS_ADDRESS="$_notify_dbus" \
+        WAYLAND_DISPLAY="$_notify_wl" \
+        paplay /usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga \
+        2>/dev/null || true
+}
+
 if [ "$capacity" -le "$LOW_BAT_PCT" ]; then
     if [ "$screen_on" = "no" ]; then
         echo "z13-battery-guard: battery ${capacity}%, screen off — hibernating (below ${LOW_BAT_PCT}%, user absent)"
         systemctl hibernate
     elif [ "$capacity" -le "$CRITICAL_FLOOR_PCT" ]; then
-        # Below critical floor: hibernate regardless of user presence.
-        # KDE PowerDevil cannot be trusted as the sole trigger — it fires too
-        # late for this machine's throttled hibernate write (2026-07-21).
-        echo "z13-battery-guard: battery ${capacity}% ≤ ${CRITICAL_FLOOR_PCT}% — critical floor, hibernating (user may be present)"
-        # Notify user if a Wayland session exists, then sleep 5 s so they can
-        # see the alert before the screen goes dark (confirmed missing 2026-07-25).
-        _uid=$(id -u gunther 2>/dev/null || echo "")
-        if [ -n "$_uid" ]; then
-            _xdg="/run/user/$_uid"
-            for _w in wayland-0 wayland-1 wayland-2; do
-                if [ -S "$_xdg/$_w" ]; then
-                    sudo -u gunther env \
-                        XDG_RUNTIME_DIR="$_xdg" \
-                        DBUS_SESSION_BUS_ADDRESS="unix:path=$_xdg/bus" \
-                        WAYLAND_DISPLAY="$_w" \
-                        notify-send -u critical -t 8000 \
-                        "Battery Critical — Hibernating in 5 s" \
-                        "Battery at ${capacity}%. Plug in or save your work." \
-                        2>/dev/null || true
-                    sleep 5
-                    break
-                fi
-            done
-        fi
+        # Below critical floor: 60-second audible countdown, then hibernate
+        # regardless of user presence.  Fires every 10 s so user can run and
+        # plug in.  Confirmed firing silently (2026-07-25); countdown added.
+        echo "z13-battery-guard: battery ${capacity}% ≤ ${CRITICAL_FLOOR_PCT}% — critical floor, 60-s countdown then hibernate"
+        for _t in 60 50 40 30 20 10; do
+            _notify critical 9500 \
+                "Battery Critical — Hibernating in ${_t}s" \
+                "Battery at ${capacity}%. Plug in or save your work NOW."
+            _alert_sound
+            sleep 10
+        done
         systemctl hibernate
     else
-        echo "z13-battery-guard: battery ${capacity}%, user present — skipping (critical floor at ${CRITICAL_FLOOR_PCT}%)"
+        # 25%–11%: user is present; warn every check cycle (every 5 min) so
+        # they know to plug in.  Confirmed firing with no user notification
+        # (2026-07-25); warning added.
+        echo "z13-battery-guard: battery ${capacity}%, user present — warning, skipping hibernate (critical floor at ${CRITICAL_FLOOR_PCT}%)"
+        _notify normal 20000 \
+            "Battery Low — ${capacity}%" \
+            "Plug in to avoid hibernation at ${CRITICAL_FLOOR_PCT}%."
     fi
     exit 0
 fi

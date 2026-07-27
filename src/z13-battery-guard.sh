@@ -153,6 +153,26 @@ if [ "$capacity" -le "$LOW_BAT_PCT" ]; then
         # KDE PowerDevil cannot be trusted as the sole trigger — it fires too
         # late for this machine's throttled hibernate write (2026-07-21).
         echo "z13-battery-guard: battery ${capacity}% ≤ ${CRITICAL_FLOOR_PCT}% — critical floor, hibernating (user may be present)"
+        # Notify user if a Wayland session exists, then sleep 5 s so they can
+        # see the alert before the screen goes dark (confirmed missing 2026-07-25).
+        _uid=$(id -u gunther 2>/dev/null || echo "")
+        if [ -n "$_uid" ]; then
+            _xdg="/run/user/$_uid"
+            for _w in wayland-0 wayland-1 wayland-2; do
+                if [ -S "$_xdg/$_w" ]; then
+                    sudo -u gunther env \
+                        XDG_RUNTIME_DIR="$_xdg" \
+                        DBUS_SESSION_BUS_ADDRESS="unix:path=$_xdg/bus" \
+                        WAYLAND_DISPLAY="$_w" \
+                        notify-send -u critical -t 8000 \
+                        "Battery Critical — Hibernating in 5 s" \
+                        "Battery at ${capacity}%. Plug in or save your work." \
+                        2>/dev/null || true
+                    sleep 5
+                    break
+                fi
+            done
+        fi
         systemctl hibernate
     else
         echo "z13-battery-guard: battery ${capacity}%, user present — skipping (critical floor at ${CRITICAL_FLOOR_PCT}%)"

@@ -69,36 +69,26 @@ systemd-run --collect --unit=z13-cstate-hold /usr/lib/z13-hibernate/cstate-hold.
 swapoff /dev/mapper/swap 2>/dev/null || kmsg "hook: volatile swapoff (ok if absent)"
 echo 0 > /sys/module/zswap/parameters/enabled 2>/dev/null || true
 
-# mt7925e WiFi: on S4 resume the firmware times out (error -110 in ieee80211_reconfig).
-# The driver is left in a broken state. If hibernate starts while the driver is in that
-# state, the PM suspend callback hangs waiting for firmware that never answers → fans
-# spin, system never powers off. Unloading the driver before hibernation forces a clean
-# firmware re-init on the next resume instead of trying to suspend a broken state.
+# mt7925e WiFi: bring the interface down so the firmware is idle before the
+# kernel's PM freeze callback (wiphy_suspend) runs.
 #
-# Always bring the interface down first regardless of lsmod state: the physical device
-# is still present and will get PM callbacks even if the module name doesn't match or
-# the driver was briefly absent due to a rapid S3 cycle reloading it.
+# We do NOT unload the module here.  Unloading with packets in-flight leaves
+# page_pool DMA orphans that the kernel can never drain (confirmed block 2026-07-30:
+# "page_pool_release_retry stalled, 2 inflight 60 sec" wedged the kernel freeze
+# phase for 23 minutes until the user forced a reset — hibernate never wrote).
+#
+# The original reason for unloading (ieee80211_reconfig -110 after S4 resume
+# leaving firmware in a broken state) does not apply here: we use disk mode
+# 'shutdown', which cuts hardware power completely.  The firmware cannot carry
+# broken state across a full power cycle.  The resume hook handles the fresh
+# module reload (forced remove + modprobe) to avoid the ieee80211_reconfig race.
 _wifi_if=wlp194s0
 if ip link show "$_wifi_if" &>/dev/null; then
   ip link set "$_wifi_if" down 2>/dev/null || true
-  kmsg "hook: ${_wifi_if} brought down"
-  # Give the RX path a moment to drain before unload: yanking the module with
-  # packets in flight can leave a page_pool that never shuts down
-  # ("page_pool_release_retry stalled pool shutdown", 2026-06-11) and the
-  # subsequent kernel hibernate entry wedges on it.
-  sleep 1
+  kmsg "hook: ${_wifi_if} brought down (mt7925e kept loaded; S4 poweroff cleans firmware state)"
 fi
 _mt_mods=$(lsmod | awk 'NR>1 && /^mt79/ {print $1}' | tr '\n' ' ')
 kmsg "hook: mt79xx lsmod: ${_mt_mods:-none}"
-if echo "$_mt_mods" | grep -qw 'mt7925e'; then
-  # timeout 20s: if firmware is broken the remove callback can hang; cap it so
-  # the machine doesn't breathe forever on AC if WiFi refuses to unload.
-  timeout 20 modprobe -r mt7925e 2>/dev/null \
-    && kmsg "hook: mt7925e unloaded" \
-    || kmsg "hook: mt7925e unload timed-out or failed (PM suspend may still hang)"
-else
-  kmsg "hook: mt7925e not in lsmod (absent or already removed)"
-fi
 
 # VirtualBox: vboxdrv PM callbacks deadlock the kernel at hibernation entry when any VM is
 # running. Save running VMs first (they resume from saved state after you start VBox post-resume),

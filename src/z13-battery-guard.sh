@@ -8,14 +8,15 @@
 #       Hibernate unconditionally.  Hardware will cut power at 0%; this is
 #       the last-resort floor before battery check is moved above cooldown.
 #
-#   battery ≤ CRITICAL_FLOOR_PCT (10%) [evaluated after cooldown]
+#   battery ≤ CRITICAL_FLOOR_PCT (15%) [evaluated after cooldown]
 #       Hibernate unconditionally — user present or not.  KDE PowerDevil's
 #       critical battery action typically fires at 5-10%, which is too late:
 #       this machine's LUKS-encrypted S4 write can fail mid-write if the
 #       battery gives out (battery died at 1% after PowerDevil triggered at
-#       ~7%, confirmed 2026-07-21).  Observed hibernate write time is 1-2
-#       minutes (~1.2-2.4% at 1.2%/min drain); 10% gives ~8 minutes of
-#       runway.  A 60-second user-visible countdown fires first.
+#       ~7%, confirmed 2026-07-21).  At low battery the EC throttles the SoC
+#       to brownout-protection mode, making the write take 10+ minutes —
+#       confirmed at 15% (2026-07-30).  15% gives ~12 min of runway.
+#       A 60-second countdown fires first so the user can plug in.
 #
 #   battery ≤ LOW_BAT_PCT (25%) AND screen is off
 #       User is not present.  Hibernate to save state before the battery
@@ -24,7 +25,7 @@
 #   battery ≤ LOW_BAT_PCT (25%) AND screen is on AND battery > CRITICAL_FLOOR_PCT
 #       User is actively present and battery is not yet critical.  Show a
 #       warning notification every check cycle so user knows to plug in.
-#       CRITICAL_FLOOR_PCT overrides at 10%.
+#       CRITICAL_FLOOR_PCT overrides at 15%.
 #
 #   load1 > LOAD_IDLE_MAX  (default 1.0, absolute — NOT scaled by nproc)
 #       CPU or disk-IO work in progress (compiler, local inference, DB query).
@@ -70,7 +71,7 @@ set -euo pipefail
 
 BAT=/sys/class/power_supply/BAT0
 EMERGENCY_PCT=2           # always hibernate: hardware safety floor
-CRITICAL_FLOOR_PCT=10     # unconditional below this: 60-s warning then hibernate
+CRITICAL_FLOOR_PCT=15     # unconditional below this: 60-s warning then hibernate
 LOW_BAT_PCT=25            # hibernate when screen off; warn user when screen on
 NET_SNAP=/run/z13-bat-net-snap   # persists non-loopback byte count between runs
 NET_BUSY_BYTES=51200      # 50 KB: above this = active network work in progress

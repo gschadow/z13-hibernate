@@ -13,21 +13,21 @@
 #      RTC is NOT an ACPI S0 wakeup source (only S4).  The alarm fires a
 #      ~200 μs kernel-internal interrupt only; it does NOT thaw userspace.
 #      The code is harmless and future-proofs for a working wakeup source.
-#   4. mt7925e unload — 2026-06-12: after ~11 h of runtime the device-suspend
-#      phase hung at 17:27; "PM: suspend of devices complete" was never logged;
-#      the machine sat in a broken PM state for 8 h until it crashed when the
-#      lid was opened at 01:24. Root cause: wiphy_suspend() times out after the
-#      firmware accumulates state across many hours of use — the same -ETIMEDOUT
-#      that 05-hibernate-hook.sh already works around for S4. Fix: unload the
-#      driver before sleep; post hook reloads it cleanly on wake.
+#   4. mt7925e interface down — bringing the interface down before sleep makes
+#      the firmware idle so wiphy_suspend() completes without timing out
+#      (confirmed 2026-06-12: active firmware state after ~11 h caused a hang).
+#      We do NOT unload the module: unloading with DMA pages in-flight creates
+#      a page_pool zombie the kernel can never drain.  On S2idle the zombie
+#      accumulated and caused a 7.5 h battery-drain / display-dead hang when a
+#      spurious lid-open ACPI event woke the machine and the post hook read
+#      "open" lid state before it reverted to "closed" (confirmed 2026-08-01).
 #
 # post/suspend:
 #   1. Cancel RTC alarm.
 #   2. Framebuffer unblank — DPMS may have been off before sleep; on Z13 the
 #      keyboard IS the lid so no key event fires on lid-open to wake DPMS.
-#   3. Reload mt7925e (if we unloaded it) — with timeout 15 to prevent an
-#      indefinite hang from a page_pool zombie left by the pre-hook unload
-#      (confirmed 2026-06-13: blocked ~80 s until hard reset).
+#   3. Reload mt7925e — no longer needed: we no longer unload it in the pre
+#      hook.  wiphy_resume() re-activates the idle-but-loaded firmware cleanly.
 #   4. SimulateUserActivity via qdbus6 — tells KDE to re-enable DPMS outputs.
 #   5. Re-trigger power_supply uevents — ASUS EC misreports AC as disconnected
 #      after s2idle; without this UPower can fire CriticalPowerAction on AC.
@@ -45,7 +45,6 @@
 set -euo pipefail
 
 SLEEP_SESSION_START=/run/z13-sleep-session-start
-MT_UNLOADED_FLAG=/run/z13-s2idle-mt-unloaded
 RTC_WAKEALARM=/sys/class/rtc/rtc0/wakealarm
 HIB_PENDING=/run/z13-hibernate-pending
 WAKE_ALARM_UNIT=/run/z13-wake-alarm-unit   # stores the current timer's unit name
@@ -58,7 +57,7 @@ case "${1:-}/${2:-}" in
   pre/suspend|pre/hybrid-sleep|pre/suspend-then-hibernate)
     sleep 2
 
-    # The mt7925e unload, RTC alarm, and session tracking only apply to the
+    # The RTC alarm, session tracking, and WiFi actions only apply to the
     # plain s2idle path. hybrid-sleep and suspend-then-hibernate are
     # explicitly disallowed in sleep.conf.d but handled gracefully here.
     if [ "${2:-}" = "suspend" ]; then
@@ -130,19 +129,13 @@ case "${1:-}/${2:-}" in
         echo "s2idle-resume-fixup: stopped ollama (ROCm GPU drain for S2idle)"
       fi
 
-      # Bring the WiFi interface down and drain before unloading.
-      # 3 s: 1 s was not enough — a page still in-flight at the DMA level
-      # survives as a page_pool zombie that causes modprobe in the post hook
-      # to hang indefinitely (confirmed 2026-06-13; post hook blocked ~80 s).
+      # Bring WiFi down before sleep so firmware is idle for wiphy_suspend().
+      # Do NOT unload mt7925e: unloading with DMA pages in-flight leaves a
+      # page_pool zombie that the kernel can never drain — confirmed to block
+      # S2idle cycling for 7+ hours (2026-08-01).  An idle interface is enough
+      # for wiphy_suspend() to complete without timing out.
       ip link set "$_wifi_if" down 2>/dev/null || true
-      sleep 3
-
-      # Unload mt7925e to bypass the buggy wiphy_suspend() callback.
-      if [ -d /sys/module/mt7925e ]; then
-        timeout 15 modprobe -r mt7925e 2>/dev/null \
-          && { touch "$MT_UNLOADED_FLAG"; echo "s2idle-resume-fixup: mt7925e unloaded"; } \
-          || echo "s2idle-resume-fixup: mt7925e unload failed — device-suspend may hang"
-      fi
+      echo "s2idle-resume-fixup: ${_wifi_if} brought down for S2idle (mt7925e kept loaded)"
     fi
     ;;
 
@@ -151,6 +144,15 @@ case "${1:-}/${2:-}" in
     if [ -w "$RTC_WAKEALARM" ]; then
       echo 0 > "$RTC_WAKEALARM" 2>/dev/null || true
     fi
+    # Let the ACPI lid state settle before reading it.  A spurious lid-open
+    # ACPI event can wake the machine from S2idle and leave the state file
+    # reporting "open" for 1-2 s before reverting to "closed" (confirmed
+    # 2026-08-01: a 19:08:41 spurious event woke the machine from a 19:08:10
+    # alarm check; the post hook read "open" instantly, cancelled the alarm
+    # chain, restarted ollama, and the machine stayed awake for 7.5 h on
+    # battery with the lid physically closed the entire time).
+    sleep 2
+
     # Cancel WakeSystem alarm only on lid-open (user wake).  For autonomous
     # wakes (lid still closed), s2idle-auto-hib.sh already re-armed a fresh
     # 5-minute alarm before exiting; cancelling it here would leave the machine
@@ -223,20 +225,6 @@ case "${1:-}/${2:-}" in
             || true
         fi
       fi
-    fi
-
-    # Reload mt7925e if we unloaded it in the pre hook.
-    # Backgrounded: a page_pool zombie (one DMA page still in-flight at
-    # module removal time) causes modprobe to block in D-state indefinitely,
-    # even past timeout 15.  Blocking here delays the hibernate gate long
-    # enough for lid-watch to re-suspend before HIB_PENDING is set.
-    # Background it so the gate fires immediately; the modprobe finishes
-    # (or is included frozen in the hibernate image) without blocking us.
-    if [ -f "$MT_UNLOADED_FLAG" ]; then
-      rm -f "$MT_UNLOADED_FLAG"
-      ( timeout 15 modprobe mt7925e 2>/dev/null \
-          && echo "s2idle-resume-fixup: mt7925e reloaded" \
-          || echo "s2idle-resume-fixup: mt7925e reload timed-out/failed — WiFi may be down" ) &
     fi
 
     # Re-trigger uevents for all power_supply devices so that UPower and

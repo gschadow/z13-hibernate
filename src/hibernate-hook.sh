@@ -7,6 +7,27 @@ if [ "$1" != "pre" ] || [ "$2" != "hibernate" ]; then
   exit 0
 fi
 
+# ── Broadcast to all VTs immediately ─────────────────────────────────────────
+# wall writes to every open TTY including VT1, VT2, VT3, etc., even when the
+# user is on a text console with no graphical notification visible.  This is
+# the UNIX shutdown-style broadcast: the user saw a text screen full of kernel
+# messages during a battery-triggered hibernate (2026-08-19) and could not
+# distinguish it from a hang.  Fire this as early as possible, before any
+# GPU/device suspend begins, so users on any VT know not to switch.
+#
+# IMPORTANT: Do NOT switch virtual terminals while this message is visible.
+# amdgpu is about to be suspended; a VT switch mid-suspend will lock the GPU
+# and require a hard reset.  The machine will resume automatically on next boot.
+wall "
+*** SYSTEM HIBERNATING — DO NOT SWITCH VIRTUAL TERMINALS ***
+
+GPU suspend is now in progress.  Switching VTs while the GPU is being
+suspended will lock the machine and require a hard reset.
+
+State is being saved to disk.  The machine will resume automatically
+on the next power-on.  This is NOT a crash or hang — it is normal.
+"
+
 # Flush early resume-prep log if present (from initrd hib-resume-prep hook)
 if [ -f /run/hib-resume-prep.log ]; then
   kmsg "initrd hib-resume-prep log from this boot:"

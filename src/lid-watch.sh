@@ -52,6 +52,16 @@ while sleep "$POLL_SEC"; do
       bat_status=$(cat /sys/class/power_supply/BAT0/status 2>/dev/null || echo "Unknown")
       if [ "$bat_status" = "Discharging" ]; then
         echo "lid-watch: lid closed >= ${DEBOUNCE_SEC}s, on battery — hibernating"
+        # Broadcast to all VTs before hibernate: user may have a text VT open
+        # and cannot see KDE notifications.  DO NOT switch VTs after this —
+        # amdgpu will be suspended imminently and VT switch will lock the GPU.
+        wall "
+*** SYSTEM HIBERNATING — LID CLOSED ON BATTERY ***
+
+Lid has been closed.  Saving state to disk (lid-close hibernate).
+DO NOT switch virtual terminals — GPU suspend is about to begin.
+Machine will resume on next power-on.  This is NOT a crash or hang.
+"
         systemctl hibernate || echo "lid-watch: hibernate request failed"
       else
         echo "lid-watch: lid closed >= ${DEBOUNCE_SEC}s — suspending"

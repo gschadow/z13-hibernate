@@ -247,6 +247,13 @@ case "${1:-}/${2:-}" in
       status=$(cat "$bat/status")
       if [ "$status" = "Discharging" ] && [ "$cap" -le 10 ]; then
         echo "s2idle-resume-fixup: battery ${cap}% on resume, scheduling hibernate"
+        wall "
+*** BATTERY LOW — HIBERNATING IN 10 SECONDS ***
+
+Battery is at ${cap}% after waking from sleep.  Saving state to disk
+in 10 seconds.  Plug in to cancel if possible.
+DO NOT switch virtual terminals — GPU suspend is about to begin.
+"
         rm -f "$SLEEP_SESSION_START"
         systemd-run --on-active=10s --unit=z13-low-battery-hibernate \
           systemctl hibernate || true
@@ -271,6 +278,14 @@ case "${1:-}/${2:-}" in
           rm -f "$SLEEP_SESSION_START"
         else
           echo "s2idle-resume-fixup: autonomous wake after ${elapsed}s, lid closed — scheduling hibernate"
+          wall "
+*** LONG SLEEP HIBERNATE IN 15 SECONDS ***
+
+Machine has been idle (lid closed) for $(( elapsed / 3600 ))h $(( (elapsed % 3600) / 60 ))m.
+Saving state to disk in 15 seconds to protect battery.
+DO NOT switch virtual terminals — GPU suspend is about to begin.
+Machine will resume on next power-on.  This is NOT a crash or hang.
+"
           rm -f "$SLEEP_SESSION_START"
           touch "$HIB_PENDING"
           systemd-run --on-active=15s --unit=z13-long-sleep-hibernate \

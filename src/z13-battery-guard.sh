@@ -100,6 +100,13 @@ load1=$(awk '{print $1}' /proc/loadavg)
 # ── Emergency floor ──────────────────────────────────────────────────────────
 if [ "$capacity" -le "$EMERGENCY_PCT" ]; then
     echo "z13-battery-guard: battery ${capacity}% ≤ ${EMERGENCY_PCT}% — EMERGENCY hibernate"
+    wall "
+*** EMERGENCY HIBERNATE — BATTERY AT ${capacity}% ***
+
+Battery is critically low.  Saving state to disk NOW.
+DO NOT switch virtual terminals — GPU suspend is in progress.
+The machine will resume on next power-on.  This is NOT a crash.
+"
     systemctl hibernate
     exit 0
 fi
@@ -184,19 +191,43 @@ _alert_sound() {
 if [ "$capacity" -le "$LOW_BAT_PCT" ]; then
     if [ "$screen_on" = "no" ]; then
         echo "z13-battery-guard: battery ${capacity}%, screen off — hibernating (below ${LOW_BAT_PCT}%, user absent)"
+        wall "
+*** SYSTEM HIBERNATING — BATTERY AT ${capacity}%, SCREEN OFF ***
+
+Screen has been off (user absent).  Saving state to disk to protect
+against battery loss.  DO NOT switch virtual terminals — GPU suspend
+is in progress.  Machine will resume on next power-on.  Not a crash.
+"
         systemctl hibernate
     elif [ "$capacity" -le "$CRITICAL_FLOOR_PCT" ]; then
         # Below critical floor: 60-second audible countdown, then hibernate
         # regardless of user presence.  Fires every 10 s so user can run and
         # plug in.  Confirmed firing silently (2026-07-25); countdown added.
+        # wall goes to every TTY (text VT1-6 and graphical VT2) so the user
+        # sees the warning even if they are on a text console with no KDE
+        # notification visible (2026-08-19: user on VT3 during countdown).
         echo "z13-battery-guard: battery ${capacity}% ≤ ${CRITICAL_FLOOR_PCT}% — critical floor, 60-s countdown then hibernate"
+        wall "
+*** BATTERY CRITICAL — HIBERNATING IN 60 SECONDS ***
+
+Battery is at ${capacity}%.  Plug in NOW to cancel.
+Save your work immediately — the machine will hibernate in 60 seconds.
+"
         for _t in 60 50 40 30 20 10; do
+            wall "Battery ${capacity}% — hibernating in ${_t} seconds.  Plug in to cancel."
             _notify critical 9500 \
                 "Battery Critical — Hibernating in ${_t}s" \
                 "Battery at ${capacity}%. Plug in or save your work NOW."
             _alert_sound
             sleep 10
         done
+        wall "
+*** BATTERY CRITICAL — HIBERNATING NOW ***
+
+Battery at ${capacity}%.  State is being saved to disk.
+DO NOT switch virtual terminals — GPU suspend is in progress.
+Machine will resume on next power-on.  This is NOT a crash.
+"
         systemctl hibernate
     else
         # 25%–11%: user is present; warn every check cycle (every 5 min) so
